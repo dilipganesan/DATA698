@@ -1,0 +1,60 @@
+---
+title: "698_file_load"
+author: "Raghu"
+date: "February 24, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r P1}
+
+# Loading Packages
+requiredpackages <- c('knitr','stringr', 'kableExtra', 'psych', 'ggplot2', 'reshape2', 'corrplot', 'tidyr', 'dplyr', 'plyr')
+for (i in requiredpackages){
+  if(!require(i,character.only=T)) install.packages(i)
+  library(i,character.only=T)
+}
+
+#cms32 <- read.csv("C:/cuny/2019/698/ICD-9-CM-v32-master-descriptions/CMS32_DESC_LONG_SHORT_DX.csv")
+cms32 <- read.csv("https://raw.githubusercontent.com/dilipganesan/DATA698/master/CMS32_DESC_LONG_SHORT_DX.csv")
+colnames(cms32) <- c("diag_code","long_desc","short_desc")
+cms32$diag_code <- as.factor(cms32$diag_code)
+head(cms32)
+
+#ucd <- read.csv("C:/cuny/2019/698/code.csv")
+ucd <- read.csv("https://raw.githubusercontent.com/dilipganesan/DATA698/master/code.csv")
+
+colnames(ucd) <- c("diag_code")
+head(ucd,5)
+
+
+setdc <- function(dc){
+          if(str_length(dc) == 2){
+           s1= paste("00",dc,sep="")
+           return(s1)
+          }
+          else if(str_length(dc) ==3){
+           s1= paste(dc,"0",sep="")
+           return(s1)  
+          }
+          else { 
+            return(dc)
+          } }
+        
+ucd$diag_code<-sapply(ucd$diag_code , setdc)
+ucd$diag_code <- as.factor(ucd$diag_code)
+
+mercode <- left_join(ucd, cms32, by = c('diag_code', 'diag_code'))
+head(mercode,15)
+colSums(!is.na(mercode))
+```
+
