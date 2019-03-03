@@ -207,11 +207,19 @@ head(ucd,5)</code></pre>
 ## 4         9
 ## 5        10</code></pre>
 <pre class="r"><code>setdc &lt;- function(dc){
-          if(str_length(dc) == 2){
+          if(str_length(dc) == 1){
+           s1= paste(dc,&quot;0000&quot;,sep=&quot;&quot;)
+           return(s1)
+          }
+            if(str_length(dc) == 2){
            s1= paste(&quot;00&quot;,dc,sep=&quot;&quot;)
            return(s1)
           }
-          else if(str_length(dc) ==3){
+            else if(str_length(dc) ==3){
+           s1= paste(dc,&quot;0&quot;,sep=&quot;&quot;)
+           return(s1)  
+          }
+          else if(str_length(dc) ==4){
            s1= paste(dc,&quot;0&quot;,sep=&quot;&quot;)
            return(s1)  
           }
@@ -222,45 +230,33 @@ head(ucd,5)</code></pre>
 ucd$diag_code&lt;-sapply(ucd$diag_code , setdc)
 ucd$diag_code &lt;- as.factor(ucd$diag_code)
 
+
 mercode &lt;- left_join(ucd, cms32, by = c('diag_code', 'diag_code'))</code></pre>
 <pre><code>## Warning: Column `diag_code` joining factors with different levels, coercing
 ## to character vector</code></pre>
-<pre class="r"><code>head(mercode,15)</code></pre>
-<pre><code>##    diag_code                             long_desc
-## 1        373                                  &lt;NA&gt;
-## 2        534                                  &lt;NA&gt;
-## 3        614                                  &lt;NA&gt;
-## 4        699                                  &lt;NA&gt;
-## 5       0010        Cholera due to vibrio cholerae
-## 6       0011 Cholera due to vibrio cholerae el tor
-## 7       0014                                  &lt;NA&gt;
-## 8       0017                                  &lt;NA&gt;
-## 9       0023                   Paratyphoid fever C
-## 10      0027                                  &lt;NA&gt;
-## 11      0031                 Salmonella septicemia
-## 12      0034                                  &lt;NA&gt;
-## 13      0035                                  &lt;NA&gt;
-## 14      0036                                  &lt;NA&gt;
-## 15      0038 Other specified salmonella infections
-##                  short_desc NA
-## 1                      &lt;NA&gt; NA
-## 2                      &lt;NA&gt; NA
-## 3                      &lt;NA&gt; NA
-## 4                      &lt;NA&gt; NA
-## 5  Cholera d/t vib cholerae NA
-## 6    Cholera d/t vib el tor NA
-## 7                      &lt;NA&gt; NA
-## 8                      &lt;NA&gt; NA
-## 9       Paratyphoid fever c NA
-## 10                     &lt;NA&gt; NA
-## 11    Salmonella septicemia NA
-## 12                     &lt;NA&gt; NA
-## 13                     &lt;NA&gt; NA
-## 14                     &lt;NA&gt; NA
-## 15 Salmonella infection NEC NA</code></pre>
 <pre class="r"><code>colSums(!is.na(mercode))</code></pre>
 <pre><code>##  diag_code  long_desc short_desc         NA 
-##        915        485        485          0</code></pre>
+##        915        561        561          0</code></pre>
+<pre class="r"><code>####2nd iteration######
+setdc2 &lt;- function(dc,ld){
+          if((str_length(dc) == 3) &amp; is.null(ld) ){
+           s1= paste(dc,&quot;0&quot;,sep=&quot;&quot;)
+           return(s1)
+          }
+              else { 
+            return(dc)
+          } }
+
+ucd$diag_code&lt;-mapply(setdc2, mercode$diag_code , mercode$long_desc)
+ucd$diag_code &lt;- as.factor(ucd$diag_code)
+
+mercode2 &lt;- left_join(ucd, mercode, by = c('diag_code', 'diag_code'))</code></pre>
+<pre><code>## Warning: Column `diag_code` joining factor and character vector, coercing
+## into character vector</code></pre>
+<pre class="r"><code>#head(mercode2,15)
+colSums(!is.na(mercode2))</code></pre>
+<pre><code>##  diag_code  long_desc short_desc         NA 
+##        915        561        561          0</code></pre>
 </div>
 
 

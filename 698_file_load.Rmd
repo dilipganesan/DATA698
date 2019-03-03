@@ -38,11 +38,19 @@ head(ucd,5)
 
 
 setdc <- function(dc){
-          if(str_length(dc) == 2){
+          if(str_length(dc) == 1){
+           s1= paste(dc,"0000",sep="")
+           return(s1)
+          }
+            if(str_length(dc) == 2){
            s1= paste("00",dc,sep="")
            return(s1)
           }
-          else if(str_length(dc) ==3){
+            else if(str_length(dc) ==3){
+           s1= paste(dc,"0",sep="")
+           return(s1)  
+          }
+          else if(str_length(dc) ==4){
            s1= paste(dc,"0",sep="")
            return(s1)  
           }
@@ -53,8 +61,26 @@ setdc <- function(dc){
 ucd$diag_code<-sapply(ucd$diag_code , setdc)
 ucd$diag_code <- as.factor(ucd$diag_code)
 
+
 mercode <- left_join(ucd, cms32, by = c('diag_code', 'diag_code'))
-head(mercode,15)
 colSums(!is.na(mercode))
+####2nd iteration######
+setdc2 <- function(dc,ld){
+          if((str_length(dc) == 3) & is.null(ld) ){
+           s1= paste(dc,"0",sep="")
+           return(s1)
+          }
+              else { 
+            return(dc)
+          } }
+
+ucd$diag_code<-mapply(setdc2, mercode$diag_code , mercode$long_desc)
+ucd$diag_code <- as.factor(ucd$diag_code)
+
+mercode2 <- left_join(ucd, mercode, by = c('diag_code', 'diag_code'))
+
+
+#head(mercode2,15)
+colSums(!is.na(mercode2))
 ```
 
