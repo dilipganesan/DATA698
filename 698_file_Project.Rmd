@@ -1,0 +1,322 @@
+---
+title: "Final Project"
+author:
+- Ali Harb
+- Dilip Ganesan
+- Raghunathan Ramnath
+date: "May 10, 2019"
+output:
+  pdf_document:
+    df_print: kable
+    fig_caption: yes
+    fig_height: 6
+    fig_width: 7
+    highlight: tango
+    keep_tex: yes
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '4'
+  prettydoc::html_pretty:
+    df_print: paged
+    highlight: github
+    theme: leonids
+    toc: yes
+geometry: margin=1in
+link-citations: yes
+fontsize: 11pt
+subtitle: CUNY SPS Masters in Data Science - DATA 698
+fontfamily: mathpazo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+
+library(kableExtra) # latex tables
+library(stringr)    # strings
+library(psych)      # describe a data frame
+#library(zipcode)    # zipcode library
+library(dplyr)      # data wrangling
+library(tidyr)      # data wrangling
+library(reshape2)   # data wrangling
+library(nlme)       # generalized linear model
+library(lattice)    # plotting
+#library(fastDummies)# dummy variables
+library(ggplot2)    # graphical plots
+#library(ggpubr)     # plots
+library(grid)       # map plots
+library(gridExtra)
+#library(choroplethrZip)
+library(choroplethr)
+
+```
+
+#Load Data
+
+```{r P1}
+#Load data set
+dset <- read.csv("C:/cuny/2019/698/dataset_diabetes/dataset_diabetes/diabetic_data.csv")
+                 
+head(dset)                 
+```
+
+
+```{r, echo=FALSE}
+# Obtain dimensions of dataset
+get_dims <- function(df){
+  
+  dimensions <- dim(df)
+  dimensions <- data.frame('Records' = dimensions[1],
+                           'Variables' = dimensions[2])
+  return(dimensions)
+}
+
+```
+
+
+
+```{r P2, echo=FALSE}
+
+dimensions <- get_dims(dset)
+```
+
+\newpage
+# Summary Statistics
+
+The current data set is composed of `r dimensions$Records[1]` records and `r dimensions$Variables[1]` variables.
+
+```{r P3, echo=FALSE}
+
+#dset$admission_type_id <- factor(dset$admission_type_id)
+#dset$discharge_disposition_id <- factor(dset$discharge_disposition_id)
+#dset$admission_source_id <- factor(dset$admission_source_id)
+#dset$time_in_hospital<-factor(dset$time_in_hospital)
+#dset$num_lab_procedures<-factor(dset$num_lab_procedures)
+#dset$num_procedures<-factor(dset$num_procedures)
+#dset$num_medications<-factor(dset$num_medications)
+#dset$number_outpatient<-factor(dset$number_outpatient)
+#dset$number_emergency<-factor(dset$number_emergency)
+#dset$number_inpatient<-factor(dset$number_inpatient)
+#dset$number_diagnoses<-factor(dset$number_diagnoses)
+
+
+summary(dset)
+```
+
+
+#Data Analysis
+
+encounter_id
+
+patient_nbr
+
+Race: 75% of the population are Caucasian. Remaining 25% includes other 4 races that include others and unknown.
+
+Gender: Almost 54% of the population is female and 46% of the population is male.
+
+Age: [70-80] has the highest patient population.
+
+admission_type_id: Almost 54% of the patient population were admitted in 
+"Emergency"
+
+discharge_disposition_id:60% of the patient population where discharged to home
+
+admission_source_id: "Emergency Room" was the source for 57% of patient population
+
+payer_code:40% of the patient population does not have payer_code. 
+
+medical_specialty:50% of the population does not have the specialty. 
+
+num_lab_procedures:varies..
+
+num_procedures:47% patient population did not have any procedures.  21% had 1 procedure and 13% had 2 procedures and the remaining had between 3 and 6.
+
+num_medications: varies..
+
+number_outpatient:85% its 0
+
+number_emergency:90% of time its not emergency
+
+number_inpatient:67% its 0.
+
+number_diagnoses:50% of the population have 9 diagnoses
+
+max_glue_serum:96% of the patient population does not have.
+
+A1Cresult:85% of the patient population did not have A1C.
+
+metformin:81% of the patient population did not have metformin.
+
+insulin:varies
+
+change:47% its ch.
+
+diabetesMed:78% its yes.
+
+readmitted:46% admitted.
+
+diag_1
+
+diag_2
+
+diag_3
+
+
+## Following can be ignored.
+
+weight: this can be ignored as for 98% of the patient population its unknown.
+
+repaglinide:Mostly its no.
+
+naateglinide:Mostly its no.
+
+chlorpropamide:Mostly its no.
+
+glimepiride:Mostly its no.
+
+acetohexamide:No except one.
+
+glipizide:No except one.
+
+glyburide:91% its no.
+
+miglitol:91% its no.
+
+troglitazone:Mostly its no.
+
+tolazamide:Mostly its no.
+
+examide:Mostly its no.
+
+citoglipton:Mostly its no.
+
+glyburide.metformin:Mostly its no.
+
+glipizide.metformin:Mostly its no.
+
+glimepiride.pioglitazone:Mostly its no.
+
+```{r P4, echo=FALSE}
+str(dset)
+```
+
+# Histogram
+
+```{r p6}
+
+ggplot(melt(dset), aes(x=value)) + facet_wrap(~variable, scale="free") + geom_histogram(bins=50)
+
+```
+
+# Missing Values: 
+```{r p7}
+#Replace ? with NA
+dset[dset=="?"]<-NA
+
+## Missing Values
+options(scipen = 999)
+missing_plot <- VIM::aggr(dset,  
+                      numbers = T, 
+                      sortVars = T,
+                      col = c("lightgreen", "darkred", "orange"),
+                      labels=str_sub(names(dset), 1, 8), 
+                      ylab=c("Missing Value Counts"
+                             , "Pattern"))
+
+
+missing_plot$missings %>% 
+  mutate(
+    pct_missing = Count / nrow(dset)
+    ) %>% 
+  arrange(-pct_missing) %>% 
+  filter(pct_missing > 0) %>% 
+  kable(digits = 3, row.names = T, caption = "Variables Missing Values")  
+options(scipen=0, digits=7)
+
+```
+
+# Drop Missing Values: 
+
+Weight is missing in over 98% records. Owing to the poor interpretability of missing values and little predictive generalizability to other patients, best thing is to just drop it.
+
+Payer code and Medical Specialty of treating physician also have 40-50% missing values. We decided to drop these.
+
+```{r p8}
+
+dset$weight<-NULL
+dset$payer_code<-NULL
+dset$medical_specialty<-NULL
+dset$citoglipton<-NULL
+dset$examide<-NULL
+
+#deletes columns 'weight','payer_code','medical_specialty'
+
+#We also noticed that for two variables (drugs named citoglipton and examide), all records have the same value. So essentially these cannot provide any interpretive or discriminatory information for predicting readmission, and we dropped these columns as well. Technically, this isn't a missing value problem but rather a missing information problem.
+
+```
+
+# Addition of variables: 
+
+ Service utilization: The data contains variables for number of inpatient (admissions), emergency room visits and outpatient visits for a given patient in the previous one year. These are (crude) measures of how much hospital/clinic services a person has used in the past year.
+ 
+```{r p9}
+
+dset['service_utilization'] <- dset['number_outpatient'] + 
+   dset['number_emergency'] + dset['number_inpatient']
+
+```
+
+Number of medication changes: The dataset contains 23 features for 23 drugs (or combos) which indicate for each of these, whether a change in that medication was made or not during the current hospital stay of patient. Medication change for diabetics upon admission has been shown by previous research to be associated with lower readmission rates. We decided to count how many changes were made in total for each patient, and declared that a new feature. The reasoning here was to both simplify the model and possibly discover a relationship with number of changes regardless of which drug was changed.
+
+
+ 
+```{r p10}
+
+keys = list ('metformin', 'repaglinide', 'nateglinide', 'chlorpropamide',
+'glimepiride', 'glipizide', 'glyburide', 'pioglitazone', 'rosiglitazone',
+ 'acarbose', 'miglitol', 'insulin', 'glyburide.metformin', 'tolazamide', 
+'metformin.pioglitazone','metformin.rosiglitazone', 'glimepiride.pioglitazone', 
+'glipizide.metformin', 'troglitazone', 'tolbutamide', 'acetohexamide')
+
+
+bv <- function(x) {  
+    if (x =='No'|x=='Steady'){s=0}
+      else {s=1}
+    return(s)
+}
+
+#dset$metformin <- dset$metformin.apply(lambda x: 0 if (x =='No'|x=='Steady') else 1)
+#dset['metformin']<- sapply(dset['metformin'], bv)
+
+for (i in keys)
+  { dset[i]<- sapply(dset[i], bv)
+}
+```
+
+
+```{r p11}
+
+dset$numchange<- dset['metformin'] + dset['repaglinide'] + dset['nateglinide'] + dset['chlorpropamide'] + dset['glimepiride']   + dset['glipizide']+ dset['glyburide']+ dset['pioglitazone']   + dset['rosiglitazone'] + dset['acarbose'] + dset['miglitol'] + dset['insulin'] + dset['glyburide.metformin']  + dset['tolazamide'] + dset['metformin.pioglitazone'] + dset['metformin.rosiglitazone']+ dset['glimepiride.pioglitazone'] + dset['glipizide.metformin'] + dset['troglitazone']+ dset['tolbutamide'] + dset['acetohexamide']
+
+#for (i in keys)
+#    { dset['numchange'] = dset['numchange'] + dset[i] }
+
+```
+
+
+# Split Data: 
+```{r p12}
+    
+    train<-sample_frac(dset, 0.7)
+    sid<-as.numeric(rownames(train)) # because rownames() returns character
+    test<-dset[-sid,]
+    
+```
+
+
