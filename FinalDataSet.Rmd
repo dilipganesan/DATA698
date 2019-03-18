@@ -1,0 +1,90 @@
+---
+title: "Final_Diabetes_Dataset"
+author: "Ali Harb"
+date: "March 4, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+get dataframes
+
+```{r}
+diabetes_Dataset <-read.csv(file="diabetic_data.csv", header=TRUE, sep=",",stringsAsFactors=FALSE)
+formated_DRG_Data <-read.csv(file="formated_diags.csv", header=TRUE, sep=",",stringsAsFactors=FALSE)
+DRG_Unique_Data <- read.csv(file="DRG_Of_Uinique_Codes.csv", header=TRUE, sep=",",stringsAsFactors=FALSE)
+colnames(DRG_Unique_Data)<-c("Code","DRG","Payment")
+
+print("***********diabetes_Dataset**************")
+str(diabetes_Dataset)
+print("***********formated_DRG_Data**************")
+str(formated_DRG_Data)
+print("***********DRG_Unique_Data**************")
+str(DRG_Unique_Data)
+
+```
+
+
+match the Code with Unique primary DRG 
+
+```{r}
+for(i in DRG_Unique_Data$Code){
+  formated_DRG_Data$DRG[formated_DRG_Data$diag_1==i]<-DRG_Unique_Data$DRG[DRG_Unique_Data$Code==i]
+  formated_DRG_Data$Payment[formated_DRG_Data[2]==i]<-DRG_Unique_Data$Payment[DRG_Unique_Data$Code==i]
+}
+head(formated_DRG_Data)
+```
+
+
+
+
+add corrected codes to dataset 
+
+```{r}
+diabetes_Dataset[["Primary_Diag"]] <- formated_DRG_Data$diag_1
+head(diabetes_Dataset[c("Primary_Diag","diag_1")],3)
+tail(diabetes_Dataset[c("Primary_Diag","diag_1")],3)
+
+diabetes_Dataset[["Secondary_Diag_1"]] <- formated_DRG_Data$diag_2
+head(diabetes_Dataset[c("Secondary_Diag_1","diag_2")],3)
+tail(diabetes_Dataset[c("Secondary_Diag_1","diag_2")],3)
+
+diabetes_Dataset[["Secondary_Diag_2"]] <- formated_DRG_Data$diag_3
+head(diabetes_Dataset[c("Secondary_Diag_2","diag_3")],3)
+tail(diabetes_Dataset[c("Secondary_Diag_2","diag_3")],3)
+
+
+```
+
+add DRGs and payments to dataset
+
+```{r}
+diabetes_Dataset[["DRG"]] <- formated_DRG_Data$DRG
+head(diabetes_Dataset[c("Primary_Diag","DRG")])
+tail(diabetes_Dataset[c("Primary_Diag","DRG")])
+
+diabetes_Dataset[["Payment"]] <- formated_DRG_Data$Payment
+head(diabetes_Dataset[c("Primary_Diag","DRG","Payment")])
+tail(diabetes_Dataset[c("Primary_Diag","DRG","Payment")])
+```
+
+
+remove old dianostic codes
+
+```{r}
+length(diabetes_Dataset)
+colnames(diabetes_Dataset)
+diabetes_Dataset[c("diag_1","diag_2","diag_3")]<-NULL
+length(diabetes_Dataset)
+colnames(diabetes_Dataset)
+```
+
+
+
+```{r}
+write.csv(diabetes_Dataset,row.names=FALSE, file = "Final_Diabetes_Dataset.csv")
+```
+
+

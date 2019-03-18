@@ -1,0 +1,818 @@
+---
+title: "Data Transformation"
+author: "Ali Harb"
+date: "March 2, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import and Explore Data
+
+### Import the diagnostic data to R IDE
+
+```{r}
+MyData <- read.csv(file="diag.csv", header=TRUE, sep=",")
+MyData_str<- data.frame(lapply(MyData, as.character), stringsAsFactors=FALSE)
+str(MyData_str)
+head(MyData)
+```
+
+### Gather all the diagnostic codes into one vector 
+
+```{r}
+diags<-c(as.character(MyData$diag_1),as.character(MyData$diag_2),as.character(MyData$diag_3))
+head(diags)
+print(paste("The length of the vector: ",length(diags)))
+```
+
+### Get the number of the unique diagnostic codes
+
+```{r}
+UniqueDiags<-unique(diags)
+print(paste("The number of unique codes: ",length(UniqueDiags)))
+```
+
+
+### Combine diagnostic codes of diag 1,2 and 3 into a single value as diagnostic sets to find how many combinations of codes the dataset contain
+
+```{r}
+diagSets=0
+for( i in 0:nrow(MyData)){
+  diagSets[i]=paste0(MyData$diag_1[i],'|',MyData$diag_2[i],'|',MyData$diag_3[i])
+}
+diagSets[0:10]
+
+print(paste("The number of combinations: ",length(diagSets)))
+```
+
+### Get the number of unique combination sets of diagnostic codes
+
+```{r}
+unique_diagSets<-unique(diagSets)
+print(paste("The number of unique combinations: ",length(unique_diagSets)))
+```
+
+### Find the letters which the diagnostic codes utilizes 
+
+```{r}
+for(i in LETTERS){
+ x<-diagE_unique<-UniqueDiags[startsWith(UniqueDiags,i)]
+ if(length(x) !=0)
+ {
+   print(i)
+ }
+}
+```
+
+## Tranform Data 
+
+### Get all codes that start with V letter
+
+```{r}
+diagV_unique<-UniqueDiags[startsWith(UniqueDiags, "V")]
+diagV_unique
+cat("\n")
+print(paste("The number of unique values: ",length(diagV_unique)))
+```
+Matched:
+V08
+
+Matched only if you add .01:
+V53,V71,V54,V25,V15,V61
+
+Add 00 to the end of the code:
+V45,V67,V10,V12,V64,V13
+
+Add 0 to the rest of the code
+
+#### Modify the V-codes to match the Find-A-Code format
+
+```{r}
+diagNot<-c("V53","V71","V54","V25","V15","V61")
+diag00<-c("V45","V67","V10","V12","V64","V13")
+diagNochange<-c("V08")
+
+diagNot0<-c(diagNot,diag00,diagNochange)
+
+diag0<-diagV_unique[!(diagV_unique %in% diagNot0)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+for(i in diag00){
+  MyData_str[MyData_str==i]<-paste0(i,"00")
+}
+
+nonMatchingCodes<-diagNot
+
+# test the codes
+
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "V")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "V")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "V")])
+```
+
+
+### Get all codes that start with E
+
+```{r}
+diagE_unique<-UniqueDiags[startsWith(UniqueDiags, "E")]
+diagE_unique
+cat("\n")
+print(paste("The number of unique values: ",length(diagE_unique)))
+```
+
+Matched:
+E956,E915,E918,E887,E916,E882,E894,E966,E892,E912
+
+Add 0 at the end for the rest of the codes 
+
+
+#### Modify the E-codes to match the Find-A-Code format
+
+```{r}
+diagNochange<-c("E956","E915","E918","E887","E916","E882","E894","E966","E892","E912")
+
+diag0<-diagE_unique[!(diagE_unique %in% diagNochange)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+# test the codes
+
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "E")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "E")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "E")])
+```
+
+
+### Get the single digit number 
+
+```{r}
+lessThan2<-diags[nchar(diags)==1]
+unique(lessThan2)
+cat("\n")
+print(paste("The number of unique values: ",length(lessThan2)))
+
+na<-lessThan2[startsWith(lessThan2, "?")]
+cat("\n")
+print(paste("The number of elements contain '?' : ",length(na)))
+
+```
+
+Add double zero
+8 = 00800
+
+all the rest add 00 before and 0 after
+
+
+#### Replace '?' with "" 
+
+```{r}
+MyData_str[MyData_str=="?"]<-""
+head(MyData_str)
+```
+
+
+#### Transform the single digit numbers to 3 or more digits codes to match the Find-A-Code format
+
+```{r}
+diag0<-c("3","7","5","9")
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0("00",i,"0")
+}
+
+
+MyData_str[MyData_str=="8"]<-paste0("00","8","00")
+
+# test the codes
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "00")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "00")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "00")])
+```
+
+
+### Get the doule digit numbers 
+
+```{r}
+lessThan3<-diags[nchar(diags)==2]
+ulessThan3<-unique(lessThan3)
+ulessThan3
+cat("\n")
+print(paste("The number of unique values: ",length(ulessThan3)))
+```
+No Match:
+58
+
+Add 0 before and 00 after:
+41,11,10,17,14
+
+Add 0 before:
+42,48,35,75,61,96
+
+Add 0 before and 0 after for the rest of the code
+
+#### Transform the double digit munbers to 3 or more digit codes to match the Find-A-Code format
+
+```{r}
+diagNot<-c("58")
+diag0Before00<-as.character(c(41,11,10,17,14))
+diag0Before<-as.character(c(42,48,35,75,61,96))
+
+
+diagNot0<-c(diagNot,diag0Before00,diag0Before)
+
+diag0<-ulessThan3[!(ulessThan3 %in% diagNot0)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0("0",i,"0")
+}
+
+for(i in diag0Before00){
+  MyData_str[MyData_str==i]<-paste0("0",i,"00")
+}
+
+for(i in diag0Before){
+  MyData_str[MyData_str==i]<-paste0("0",i)
+}
+
+nonMatchingCodes<-c(nonMatchingCodes,diagNot)
+# test the codes
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "01")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "03")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "04")])
+```
+
+
+### Create a vector of 3 digit numbers codes excluding V-codes
+
+```{r}
+lessThan4<-diags[nchar(diags)==3]
+lessThan4<-lessThan4[!startsWith(lessThan4, "V")]
+unique(lessThan4)
+cat("\n")
+print(paste("The number of unique values: ",length(unique(lessThan4))))
+```
+
+
+### Get all 3 digit numbers that start with 1 from the new vector
+
+```{r}
+lessThan41<-lessThan4[startsWith(lessThan4, "1")]
+ulessThan41<-unique(lessThan41)
+ulessThan41
+cat("\n")
+print(paste("The number of unique values: ",length(ulessThan41)))
+
+```
+No Match: 
+187
+
+Matched:
+185,135,193,179,138
+
+Add 00 at the end of the code:
+173,115,131
+
+Add 0 at the end to rest of codes
+
+#### Transform the 3 digit numbers that start with 1 to match the Find-A-Code format
+
+```{r}
+diagNot<-c("187")
+diag00<-c("173","115","131")
+diagNochange<-c("185","135","193","179","138")
+
+diagNot0<-c(diagNot,diag00,diagNochange)
+
+diag0<-ulessThan41[!(ulessThan41 %in% diagNot0)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+for(i in diag00){
+  MyData_str[MyData_str==i]<-paste0(i,"00")
+}
+
+nonMatchingCodes<-c(nonMatchingCodes,diagNot)
+
+# test the codes
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "1")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "1")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "1")])
+```
+
+
+### Get the 3 digit numbers that start with 2 from the vector 
+
+```{r}
+lessThan42<-lessThan4[startsWith(lessThan4, "2")]
+ulessThan42<-unique(lessThan42)
+ulessThan42
+cat("\n")
+print(paste("The number of unique values: ",length(ulessThan42)))
+
+```
+
+No Match:
+284,275,258,260,243
+
+
+Matched:
+220,217,226,261,262
+
+
+Add 00 at the end of the code:
+277,295,296,202,200,288,250,204,278,203,201,274,228,242,205,250,207,208,299,279
+
+Add 0 at the end to rest of codes
+
+#### Transform the 3 digit numbers that start with 2 to match the Find-A-Code format
+
+```{r}
+diagNot<-c("284","275","258","260","243")
+diag00<-c("277","295","296","202","200","288","250","204","278","203","201","274","228","242","205","250","207","208","299")
+diagNochange<-c("220","217","226","261","262")
+
+diagNot0<-c(diagNot,diag00,diagNochange)
+
+diag0<-ulessThan42[!(ulessThan42 %in% diagNot0)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+for(i in diag00){
+  MyData_str[MyData_str==i]<-paste0(i,"00")
+}
+
+nonMatchingCodes<-c(nonMatchingCodes,diagNot)
+
+# test the codes
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "2")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "2")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "2")])
+```
+
+### Get the 3 digit numbers that Start with 3
+
+```{r}
+lessThan43<-lessThan4[startsWith(lessThan4, "3")]
+ulessThan43<-unique(lessThan43)
+ulessThan43
+cat("\n")
+print(paste("The number of unique values: ",length(ulessThan43)))
+
+```
+
+No Match:
+350,312,362,323
+
+
+Matched:
+340,311,395,319,317,316
+
+
+Add 00 at end of the code:
+386,388,337,346,303,380,358,345,305,368,304,366,374,376,383,385,300,361,370,365,344,389,373,378,342,369,379,382,384,377,375,347,360,314,327,363,372,381,364,315
+
+Add 0 at the end to rest of codes
+
+#### Transform the 3 digit numbers that start with 3 to match the Find-A-Code format
+
+```{r}
+diagNot<-as.character(c(350,312,362,323))
+diag00<-as.character(c(386,388,337,346,303,380,358,345,305,368,304,366,374,376,383,385,300,361,370,365,344,389,373,378,342,369,379,382,384,377,375,347,360,314,327,363,372,381,364,315))
+diagNochange<-as.character(c(340,311,395,319,317,316))
+
+diagNot0<-c(diagNot,diag00,diagNochange)
+
+diag0<-ulessThan43[!(ulessThan43 %in% diagNot0)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+for(i in diag00){
+  MyData_str[MyData_str==i]<-paste0(i,"00")
+}
+
+nonMatchingCodes<-c(nonMatchingCodes,diagNot)
+
+# test the codes
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "3")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "3")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "3")])
+```
+
+### Get the 3 digit numbers that Start with 4
+
+```{r}
+lessThan44<-lessThan4[startsWith(lessThan4, "4")]
+ulessThan44<-unique(lessThan44)
+ulessThan44
+cat("\n")
+print(paste("The number of unique values: ",length(ulessThan44)))
+```
+No Match:
+444,445,405,484
+
+
+Matched:
+462,431,481,496,485,475,463,430,490,470,452,412,460
+
+
+Add 00 at the end of the code:
+414,434,410,402,486,433,493,441,404,436,464,474
+
+
+Add 0 at the end to rest of codes
+
+#### Transform the 3 digit numbers that start with 4 to match the Find-A-Code format
+
+```{r}
+diagNot<-as.character(c(444,445,405,484))
+diagNochange<-as.character(c(462,431,481,496,485,475,463,430,490,470,452,412,460))
+diag00<-as.character(c(414,434,410,402,486,433,493,441,404,436,464,474))
+
+
+diagNot0<-c(diagNot,diag00,diagNochange)
+
+diag0<-ulessThan44[!(ulessThan44 %in% diagNot0)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+for(i in diag00){
+  MyData_str[MyData_str==i]<-paste0(i,"00")
+}
+
+nonMatchingCodes<-c(nonMatchingCodes,diagNot)
+
+# test the codes
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "4")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "4")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "4")])
+```
+
+### Get the 3 digit numbers that Start with 5
+
+```{r}
+lessThan45<-lessThan4[startsWith(lessThan4, "5")]
+ulessThan45<-unique(lessThan45)
+ulessThan45
+cat("\n")
+print(paste("The number of unique values: ",length(ulessThan45)))
+```
+
+No match:
+584,558,585,517
+
+
+Matched:
+515,514,566,586,591,570,501,541,542,500,538
+
+
+Add 00 at the end of the code:
+564,590,574,562,553,531,532,535,550,598,552,534,533,519,528,551,521,524,523
+
+Add 0 at the end to rest of codes
+
+#### Transform the 3 digit numbers that start with 5 to match the Find-A-Code format
+
+```{r}
+diagNot<-as.character(c(584,558,585,517))
+diagNochange<-as.character(c(515,514,566,586,591,570,501,541,542,500,538))
+diag00<-as.character(c(564,590,574,562,553,531,532,535,550,598,552,534,533,519,528,551,521,524,523))
+
+
+diagNot0<-c(diagNot,diag00,diagNochange)
+
+diag0<-ulessThan45[!(ulessThan45 %in% diagNot0)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+for(i in diag00){
+  MyData_str[MyData_str==i]<-paste0(i,"00")
+}
+
+# test the codes
+nonMatchingCodes<-c(nonMatchingCodes,diagNot)
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "5")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "5")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "5")])
+```
+
+
+### Get the 3 digit numbers that Start with 6
+
+```{r}
+lessThan46<-lessThan4[startsWith(lessThan4, "6")]
+ulessThan46<-unique(lessThan46)
+ulessThan46
+cat("\n")
+print(paste("The number of unique values: ",length(ulessThan46)))
+```
+
+No Match:
+645,690,624
+
+Matched:
+632,683,605
+
+
+Add 00 ata the end of the code:
+648,618,642,656,661,681,654,655,658,644,669,663,664,600,659,647,652,646,641,643,660,634,686,637,633,640,674,653,665,657,649,670
+
+
+Add 0 at the end to rest of codes
+
+#### Transform the 3 digit numbers that start with 6 to match the Find-A-Code format
+
+```{r}
+diagNot<-as.character(c(645,690,624))
+diagNochange<-as.character(c(632,683,605))
+diag00<-as.character(c(648,618,642,656,661,681,654,655,658,644,669,663,664,600,659,647,652,646,641,643,660,634,686,637,633,640,674,653,665,657,649,670))
+
+
+diagNot0<-c(diagNot,diag00,diagNochange)
+
+diag0<-ulessThan46[!(ulessThan46 %in% diagNot0)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+for(i in diag00){
+  MyData_str[MyData_str==i]<-paste0(i,"00")
+}
+
+nonMatchingCodes<-c(nonMatchingCodes,diagNot)
+
+# test the codes
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "6")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "6")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "6")])
+```
+
+
+### Get the 3 digit numbers that Start with 7
+
+```{r}
+lessThan47<-lessThan4[startsWith(lessThan4, "7")]
+ulessThan47<-unique(lessThan47)
+ulessThan47
+cat("\n")
+print(paste("The number of unique values: ",length(ulessThan47)))
+```
+
+No Match:  (family code)
+780,787,799,790 
+
+Matched:
+797,725,734
+
+
+Add 00 ata the end of the code:
+786,707,715,730,724,789,733,711,727,716,736,746,719,718,709,741,755,744
+
+Add 0 at the end to rest of codes
+
+
+#### Transform the 3 digit numbers that start with 7 to match the Find-A-Code format
+
+```{r}
+diagNot<-as.character(c(780,787,799,790 ))
+diagNochange<-as.character(c(797,725,734))
+diag00<-as.character(c(786,707,715,730,724,789,733,711,727,716,736,746,719,718,709,741,755,744))
+
+
+diagNot0<-c(diagNot,diag00,diagNochange)
+
+diag0<-ulessThan47[!(ulessThan47 %in% diagNot0)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+for(i in diag00){
+  MyData_str[MyData_str==i]<-paste0(i,"00")
+}
+
+nonMatchingCodes<-c(nonMatchingCodes,diagNot)
+
+# test the codes
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "7")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "7")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "7")])
+```
+
+
+### Get the 3 digit numbers that Start with 8
+
+```{r}
+lessThan48<-lessThan4[startsWith(lessThan4, "8")]
+ulessThan48<-unique(lessThan48)
+ulessThan48
+cat("\n")
+print(paste("The number of unique values: ",length(ulessThan48)))
+```
+
+No Match:
+
+Matched:
+
+
+Add 00 zeros at the end of the code: 
+845,812,807,820,823,852,805,851,803,821,868,813,961,801,853,810,864,800,831,839,815,814,865,816,835,881,866,890,834,854,838,880,842,806,804,832,833,872,811
+
+Add 0 at the end to rest of codes
+
+
+#### Transform the 3 digit numbers that start with 8 to match the Find-A-Code format
+
+```{r}
+#diagNot<-as.character(c())
+#diagNochange<-as.character(c())
+diag00<-as.character(c(845,812,807,820,823,852,805,851,803,821,868,813,961,801,853,810,864,800,831,839,815,814,865,816,835,881,866,890,834,854,838,880,842,806,804,832,833,872,811))
+
+
+diagNot0<-c(diagNot,diag00,diagNochange)
+
+diag0<-ulessThan48[!(ulessThan48 %in% diagNot0)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+for(i in diag00){
+  MyData_str[MyData_str==i]<-paste0(i,"00")
+}
+
+# test the codes
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "8")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "8")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "8")])
+```
+
+
+### Get the 3 digit numbers that Start with 9
+
+```{r}
+lessThan49<-lessThan4[startsWith(lessThan4, "9")]
+ulessThan49<-unique(lessThan49)
+ulessThan49
+cat("\n")
+print(paste("The number of unique values: ",length(ulessThan49)))
+```
+
+No match:
+959 
+
+Matched:
+936,920,986
+
+
+Add 00 at the end of the code:
+996,998,997,969,965,924,942,989,945,928,952,944,923,941,903,948,927,943
+
+Add 0 at the end to the rest of the codes
+
+
+#### Transform the 3 digit numbers that start with 9 to match the Find-A-Code format
+
+```{r}
+diagNot<-as.character(c(959))
+diagNochange<-as.character(c(936,920,986))
+diag00<-as.character(c(996,998,997,969,965,924,942,989,945,928,952,944,923,941,903,948,927,943))
+
+
+diagNot0<-c(diagNot,diag00,diagNochange)
+
+diag0<-ulessThan49[!(ulessThan49 %in% diagNot0)]
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+for(i in diag00){
+  MyData_str[MyData_str==i]<-paste0(i,"00")
+}
+
+nonMatchingCodes<-c(nonMatchingCodes,diagNot)
+
+# testing codes
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, "9")])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, "9")])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, "9")])
+```
+
+### Get the 4 digit numbers excluding the E-code
+
+```{r}
+lessThan5<-diags[nchar(diags)==4]
+lessThan5<-lessThan5[!startsWith(lessThan5, "E")]
+unique(lessThan5)
+cat("\n")
+print(paste("The number of unique values: ",length(unique(lessThan5))))
+```
+
+Zero 4 digit numbers 
+
+### Get the 5 digit numbers
+
+```{r}
+lessThan6<-diags[nchar(diags)==5]
+unique(lessThan6)
+cat("\n")
+print(paste("The number of unique values: ",length(unique(lessThan6))))
+```
+
+Add 0 to the end for all entries
+
+#### Transform the 5 digit numbers to match the Find-A-Code format
+
+```{r}
+diag0<-c("250.7","250.6","250.4","250.8","250.1","250.2","250.3","250.5","250.9")
+
+for(i in diag0){
+  MyData_str[MyData_str==i]<-paste0(i,"0")
+}
+
+# test the codes
+unique(MyData_str$diag_1[startsWith(MyData_str$diag_1, diag0)])
+unique(MyData_str$diag_2[startsWith(MyData_str$diag_2, diag0)])
+unique(MyData_str$diag_3[startsWith(MyData_str$diag_3, diag0)])
+```
+
+### Get the 6 digit numbers
+
+```{r}
+lessThan7<-diags[nchar(diags)==6]
+unique(lessThan7)
+cat("\n")
+print(paste("The number of unique values: ",length(unique(lessThan7))))
+```
+
+All are valid codes 
+
+
+## Export Data 
+
+```{r}
+write.csv(MyData_str,row.names=FALSE, file = "formated_diags.csv")
+```
+
+
+## Invalid Codes 
+
+```{r}
+print("list of the codes that doesn't match with Find-A-Code:")
+nonMatchingCodes
+
+Invalid_diag1<-MyData_str$diag_1[startsWith(MyData_str$diag_1, nonMatchingCodes)]
+Invalid_diag2<-MyData_str$diag_2[startsWith(MyData_str$diag_2, nonMatchingCodes)]
+Invalid_diag3<-MyData_str$diag_3[startsWith(MyData_str$diag_3, nonMatchingCodes)]
+
+Invalid_diag1<-Invalid_diag1[nchar(Invalid_diag1)==3]
+Invalid_diag2<-Invalid_diag2[nchar(Invalid_diag2)==3]
+Invalid_diag3<-Invalid_diag3[nchar(Invalid_diag3)==3]
+
+
+
+InvalidDiagsEntries<-c(Invalid_diag1,Invalid_diag2,Invalid_diag3)
+
+cat("\n")
+print("Print 20 entries of the invalid codes:")
+head(InvalidDiagsEntries,20)
+
+cat("\n")
+print(paste( "There are a ",length(InvalidDiagsEntries)," entries that are not valid"))
+```
+## Download Transformed Data
+
+```{r warning=FALSE, message=FALSE}
+library(magrittr)
+readLines("formated_diags.csv") %>% 
+  paste0(collapse="\n") %>% 
+  openssl::base64_encode() -> encoded
+```
+
+NOTE:
+
+When it prompt to download GIVE THE DOCUMENT A NAME with .csv as file extension
+
+[Download formated_diags.CSV](`r sprintf('data:text/csv;base64,%s', encoded)`)
+
+
+-------
