@@ -1,0 +1,447 @@
+---
+title: "Clinical_Parameter_Data_Cleanup"
+author: "Dilip Ganesan"
+date: "3/20/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tidyr)
+```
+
+
+
+```{r}
+#dset_new <- read.csv("/Users/dilipganesan/Dilip_Docs/CUNY/DATA698_Master_Thesis_Project/Final_Diabetes_Dataset.csv")
+
+#dset_old = read.csv("/Users/dilipganesan/Dilip_Docs/CUNY/DATA698_Master_Thesis_Project/dataset_diabetes/diabetic_data.csv")
+
+#dset_old_2 = dset_old[c('encounter_id','patient_nbr','diag_1','diag_2','diag_3')] 
+
+#dset_new_3 = inner_join(dset_new, dset_old_2 , by = c('encounter_id','patient_nbr')) 
+#summary(dset_new_3)
+
+#write.csv(dset_new_3, file="~/Dilip_Docs/CUNY/DATA698_Master_Thesis_Project/Diabetic_Dataset.csv")
+dset_new_3 = read.csv("/Users/dilipganesan/Dilip_Docs/CUNY/DATA698_Master_Thesis_Project/Diabetic_Dataset.csv")
+#summary(dset_new_3)
+
+# Cleanup DRG and Final Amount missing NA rows.
+dset_new_naremo = na.omit(dset_new_3)
+#Clean up 3 rows where race is 0
+dset_new_naremo = subset(dset_new_naremo, !(gender == "Unknown/Invalid"))
+#Clean up Weight, Payer Code, Specialty. 90% missing values.
+cleandset = dset_new_naremo %>%
+            select(-c("X","weight","medical_specialty","payer_code","encounter_id","patient_nbr"))
+#Remove Patients who have expired. Discharge Disposition = 11(Died in hospital). 1642 patients have died.
+# Have to include 20 and 19 also
+#deadpatient = subset(cleandset, (discharge_disposition_id == "11"))
+cleandset = subset(cleandset, !(discharge_disposition_id == "11" | discharge_disposition_id == "20" | discharge_disposition_id == "19"))
+# On analysis of medications, we figured Examide and Citoglipton was not administered
+# to the entire patient population. So it is of no use to add these two in our analysis.
+cleandset = cleandset %>%
+            select(-c("examide","citoglipton"))
+# Remove rows where all three diagnosis codes are empty.
+cleandset = subset(cleandset ,!(diag_1 == "?" & diag_2 == "?" & diag_3 == "?"))
+
+# Next as part of ICD 9 Diagnosis classification we are going to group diagnosis based on
+# diagnosis class. Currently we have 790 unique diagnosis codes, having them in the model 
+# will not be of use, so we are going to club them based on diag class.
+summary(cleandset)
+#levels(cleandset$diag_3)
+levels(cleandset$diag_1)[levels(cleandset$diag_1) == "?"] = "0"
+levels(cleandset$diag_2)[levels(cleandset$diag_2) == "?"] = "0"
+levels(cleandset$diag_3)[levels(cleandset$diag_3) == "?"] = "0"
+
+#cleandset %>% 
+#  group_by(diag_1) %>%
+#  summarise(Count = n())
+
+#nadiag = subset(cleandset , is.na(diag_3))
+#unique(cleandset$diag_1)
+
+cleandset$diag_1 <- as.numeric(levels(cleandset$diag_1)[cleandset$diag_1])
+cleandset$diag_2 <- as.numeric(levels(cleandset$diag_2)[cleandset$diag_2])
+cleandset$diag_3 <- as.numeric(levels(cleandset$diag_3)[cleandset$diag_3])
+
+##############################Primary Diagnosis Classification##############################################
+
+cleandset$primarydiagclass[is.na(cleandset$diag_1) | cleandset$diag_1 == 0] = "0"
+cleandset$primarydiagclass[cleandset$diag_1>=390 & cleandset$diag_1 <= 459 | cleandset$diag_1==785] = "1"
+cleandset$primarydiagclass[cleandset$diag_1>=460 & cleandset$diag_1 <= 519 | cleandset$diag_1==786] = "2"
+cleandset$primarydiagclass[cleandset$diag_1>=520 & cleandset$diag_1 <= 579 | cleandset$diag_1==787] = "3"
+cleandset$primarydiagclass[cleandset$diag_1>=250 & cleandset$diag_1 < 251] = "4"
+cleandset$primarydiagclass[cleandset$diag_1>800 & cleandset$diag_1 <= 999] = "5"
+cleandset$primarydiagclass[cleandset$diag_1>=710 & cleandset$diag_1 <= 739] = "6"
+cleandset$primarydiagclass[cleandset$diag_1>=580 & cleandset$diag_1 <= 629 | cleandset$diag_1==788] = "7"
+cleandset$primarydiagclass[cleandset$diag_1>=140 & cleandset$diag_1 <= 239 | cleandset$diag_1>=790 & 
+                        cleandset$diag_1 <= 799 | cleandset$diag_1==780 | cleandset$diag_1>=240 & cleandset$diag_1 < 250 |
+                        cleandset$diag_1>=251 & cleandset$diag_1 <= 279 | cleandset$diag_1>=680 & cleandset$diag_1 <= 709 |
+                        cleandset$diag_1>=001 & cleandset$diag_1 <= 139 | cleandset$diag_1==781 |
+                      cleandset$diag_1==782 | cleandset$diag_1==784] = "8"
+cleandset$primarydiagclass[is.na(cleandset$primarydiagclass)] = "0"
+#primdiag = subset(cleandset , is.na(primarydiagclass))
+#unique(cleandset$primarydiagclass)
+
+##############################Secondary Diagnosis Classification##############################################
+
+cleandset$secondarydiagclass_1[is.na(cleandset$diag_2) | cleandset$diag_2 == 0] = "0"
+cleandset$secondarydiagclass_1[cleandset$diag_2>=390 & cleandset$diag_2 <= 459 | cleandset$diag_2==785] = "1"
+cleandset$secondarydiagclass_1[cleandset$diag_2>=460 & cleandset$diag_2 <= 519 | cleandset$diag_2==786] = "2"
+cleandset$secondarydiagclass_1[cleandset$diag_2>=520 & cleandset$diag_2 <= 579 | cleandset$diag_2==787] = "3"
+cleandset$secondarydiagclass_1[cleandset$diag_2>=250 & cleandset$diag_2 < 251] = "4"
+cleandset$secondarydiagclass_1[cleandset$diag_2>800 & cleandset$diag_2 <= 999] = "5"
+cleandset$secondarydiagclass_1[cleandset$diag_2>=710 & cleandset$diag_2 <= 739] = "6"
+cleandset$secondarydiagclass_1[cleandset$diag_2>=580 & cleandset$diag_2 <= 629 | cleandset$diag_2==788] = "7"
+cleandset$secondarydiagclass_1[cleandset$diag_2>=140 & cleandset$diag_2 <= 239 | cleandset$diag_2>=790 & 
+                        cleandset$diag_2 <= 799 | cleandset$diag_2==780 | cleandset$diag_2>=240 & cleandset$diag_2 < 250 |
+                        cleandset$diag_2>=251 & cleandset$diag_2 <= 279 | cleandset$diag_2>=680 & cleandset$diag_2 <= 709 |
+                        cleandset$diag_2>=001 & cleandset$diag_2 <= 139 | cleandset$diag_2==781 |
+                      cleandset$diag_2==782 | cleandset$diag_2==784] = "8"
+#Diagnosis outside the above range are also classified as Others.
+cleandset$secondarydiagclass_1[is.na(cleandset$secondarydiagclass_1)] = "0"
+#primdiag = subset(cleandset , is.na(secondarydiagclass_1))
+#unique(cleandset$primarydiagclass)
+
+##############################Tertiary Diagnosis Classification##############################################
+
+
+cleandset$tertiarydiagclass_1[is.na(cleandset$diag_3) | cleandset$diag_3 == 0] = "0"
+cleandset$tertiarydiagclass_1[cleandset$diag_3>=390 & cleandset$diag_3 <= 459 | cleandset$diag_3==785] = "1"
+cleandset$tertiarydiagclass_1[cleandset$diag_3>=460 & cleandset$diag_3 <= 519 | cleandset$diag_3==786] = "2"
+cleandset$tertiarydiagclass_1[cleandset$diag_3>=520 & cleandset$diag_3 <= 579 | cleandset$diag_3==787] = "3"
+cleandset$tertiarydiagclass_1[cleandset$diag_3>=250 & cleandset$diag_3 < 251] = "4"
+cleandset$tertiarydiagclass_1[cleandset$diag_3>800 & cleandset$diag_3 <= 999] = "5"
+cleandset$tertiarydiagclass_1[cleandset$diag_3>=710 & cleandset$diag_3 <= 739] = "6"
+cleandset$tertiarydiagclass_1[cleandset$diag_3>=580 & cleandset$diag_3 <= 629 | cleandset$diag_3==788] = "7"
+cleandset$tertiarydiagclass_1[cleandset$diag_3>=140 & cleandset$diag_3 <= 239 | cleandset$diag_3>=790 & 
+                        cleandset$diag_3 <= 799 | cleandset$diag_3==780 | cleandset$diag_3>=240 & cleandset$diag_3 < 250 |
+                        cleandset$diag_3>=251 & cleandset$diag_3 <= 279 | cleandset$diag_3>=680 & cleandset$diag_3 <= 709 |
+                        cleandset$diag_3>=001 & cleandset$diag_3 <= 139 | cleandset$diag_3==781 |
+                      cleandset$diag_3==782 | cleandset$diag_3==784] = "8"
+#Diagnosis outside the above range are also classified as Others.
+cleandset$tertiarydiagclass_1[is.na(cleandset$tertiarydiagclass_1)] = "0"
+#primdiag = subset(cleandset , is.na(tertiarydiagclass_1))
+#unique(cleandset$primarydiagclass)
+
+##############################Admit Source/Type ##############################################
+unique(cleandset$admission_source_id)
+# Admit Source will be collapsed from 11 values to 5 values. 
+# Namely 1- Referral, 7- Emergency, 4 - Transfer, 11 - Delivery, 20 - Not Mapped
+cleandset$admission_source_id[cleandset$admission_source_id == "2"] = "1"
+cleandset$admission_source_id[cleandset$admission_source_id == "3"] = "1"
+# Transfer
+cleandset$admission_source_id[cleandset$admission_source_id == "5"] = "4"
+cleandset$admission_source_id[cleandset$admission_source_id == "6"] = "4"
+cleandset$admission_source_id[cleandset$admission_source_id == "10"] = "4"
+cleandset$admission_source_id[cleandset$admission_source_id == "18"] = "4"
+cleandset$admission_source_id[cleandset$admission_source_id == "22"] = "4"
+cleandset$admission_source_id[cleandset$admission_source_id == "25"] = "4"
+cleandset$admission_source_id[cleandset$admission_source_id == "26"] = "4"
+#20 Not Mapped
+cleandset$admission_source_id[cleandset$admission_source_id == "17"] = "20"
+cleandset$admission_source_id[cleandset$admission_source_id == "9"] = "20"
+# 11 Delivery
+cleandset$admission_source_id[cleandset$admission_source_id == "8"] = "11"
+cleandset$admission_source_id[cleandset$admission_source_id == "14"] = "11"
+cleandset$admission_source_id[cleandset$admission_source_id == "13"] = "11"
+
+##############################Discharge Status ##############################################
+
+# Discharge Status has 30 values, we will collapse them to 7
+# 1 - Discharged, 2 - Transfer, 7- left AMA,14-Hospice, 9-Admitted, 25 Not Mapped, 12 - Still a patient.
+unique(cleandset$discharge_disposition_id)
+
+#Discharged/Transferred
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "3"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "4"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "5"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "6"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "8"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "10"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "15"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "16"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "17"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "22"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "23"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "24"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "30"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "27"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "28"] = "2"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "29"] = "2"
+# 14 Hospice
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "13"] = "14"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "14"] = "14"
+# 25 Not Mapped
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "25"] = "25"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "26"] = "25"
+cleandset$discharge_disposition_id[cleandset$discharge_disposition_id == "18"] = "25"
+# 20,19 - Expired - Can be removed from data set.
+
+##############################Admit Type ##############################################
+unique(cleandset$admission_type_id)
+#1- Emergency, 3 - Elective, 4 - New Born, 5 - Not Mapped.
+cleandset$admission_type_id[cleandset$admission_type_id == "2"] = "1"
+cleandset$admission_type_id[cleandset$admission_type_id == "7"] = "1"
+cleandset$admission_type_id[cleandset$admission_type_id == "6"] = "5"
+cleandset$admission_type_id[cleandset$admission_type_id == "8"] = "5"
+
+##############################Gender ##############################################
+#Gender 1 - Male, 0 - Female, 0 - Unknown/Invalid
+levels(cleandset$gender)
+levels(cleandset$gender)[levels(cleandset$gender) == "Male"] = "1"
+levels(cleandset$gender)[levels(cleandset$gender) == "Female"] = "0"
+levels(cleandset$gender)[levels(cleandset$gender) == "Unknown/Invalid"] = "0"
+cleandset$gender <- as.numeric(levels(cleandset$gender)[cleandset$gender])
+##############################Race ##############################################
+levels(cleandset$race)
+cleandset %>% 
+  group_by(race) %>%
+  summarise(Count = n())
+levels(cleandset$race)[levels(cleandset$race) == "?"] = "Other"
+# 1- Other, 2 - AFA, 3 - A, 4- Caucasian, 5 - Hispanic
+levels(cleandset$race)[levels(cleandset$race) == "Other"] = "1"
+levels(cleandset$race)[levels(cleandset$race) == "AfricanAmerican"] = "2"
+levels(cleandset$race)[levels(cleandset$race) == "Asian"] = "3"
+levels(cleandset$race)[levels(cleandset$race) == "Caucasian"] = "4"
+levels(cleandset$race)[levels(cleandset$race) == "Hispanic"] = "5"
+cleandset$race <- as.numeric(levels(cleandset$race)[cleandset$race])
+##############################Age ##############################################
+#To Do
+levels(cleandset$age)
+# We have age range, we will change the ranges to average of that age range.
+levels(cleandset$age)[levels(cleandset$age) == "[0-10)"] = "5"
+levels(cleandset$age)[levels(cleandset$age) == "[10-20)"] = "15"
+levels(cleandset$age)[levels(cleandset$age) == "[20-30)"] = "25"
+levels(cleandset$age)[levels(cleandset$age) == "[30-40)"] = "35"
+levels(cleandset$age)[levels(cleandset$age) == "[40-50)"] = "45"
+levels(cleandset$age)[levels(cleandset$age) == "[50-60)"] = "55"
+levels(cleandset$age)[levels(cleandset$age) == "[60-70)"] = "65"
+levels(cleandset$age)[levels(cleandset$age) == "[70-80)"] = "75"
+levels(cleandset$age)[levels(cleandset$age) == "[80-90)"] = "85"
+levels(cleandset$age)[levels(cleandset$age) == "[90-100)"] = "95"
+cleandset$age <- as.numeric(levels(cleandset$age)[cleandset$age])
+cleandset %>% 
+  group_by(age) %>%
+  summarise(Count = n())
+
+##############################Readmitted ##############################################
+#Readmitted
+unique(cleandset$readmitted )
+levels(cleandset$readmitted)
+levels(cleandset$readmitted)[levels(cleandset$readmitted) == "<30"] = "1"
+levels(cleandset$readmitted)[levels(cleandset$readmitted) == ">30"] = "0"
+levels(cleandset$readmitted)[levels(cleandset$readmitted) == "NO"] = "0"
+cleandset$readmitted <- as.numeric(levels(cleandset$readmitted)[cleandset$readmitted])
+##############################Change of Medication ##############################################
+# Change of Medication 1 - Change, 0- No
+unique(cleandset$change)
+levels(cleandset$change)
+levels(cleandset$change)[levels(cleandset$change) == "Ch"] = "1"
+levels(cleandset$change)[levels(cleandset$change) == "No"] = "0"
+cleandset$change <- as.numeric(levels(cleandset$change)[cleandset$change])
+##############################Diabetes Medication ##############################################
+# Diabetes Medication 1 - Change, 0- No
+unique(cleandset$diabetesMed)
+levels(cleandset$diabetesMed)
+levels(cleandset$diabetesMed)[levels(cleandset$diabetesMed) == "Yes"] = "1"
+levels(cleandset$diabetesMed)[levels(cleandset$diabetesMed) == "No"] = "0"
+cleandset$diabetesMed <- as.numeric(levels(cleandset$diabetesMed)[cleandset$diabetesMed])
+##############################HbA1C Test Result ##############################################
+unique(cleandset$A1Cresult)
+levels(cleandset$A1Cresult)[levels(cleandset$A1Cresult) == ">7"] = "1"
+levels(cleandset$A1Cresult)[levels(cleandset$A1Cresult) == ">8"] = "1"
+levels(cleandset$A1Cresult)[levels(cleandset$A1Cresult) == "Norm"] = "0"
+levels(cleandset$A1Cresult)[levels(cleandset$A1Cresult) == "None"] = "-99"
+cleandset$A1Cresult <- as.numeric(levels(cleandset$A1Cresult)[cleandset$A1Cresult])
+
+##############################Max Glu Serum ##############################################
+unique(cleandset$max_glu_serum)
+levels(cleandset$max_glu_serum)[levels(cleandset$max_glu_serum) == ">200"] = "1"
+levels(cleandset$max_glu_serum)[levels(cleandset$max_glu_serum) == ">300"] = "1"
+levels(cleandset$max_glu_serum)[levels(cleandset$max_glu_serum) == "Norm"] = "0"
+levels(cleandset$max_glu_serum)[levels(cleandset$max_glu_serum) == "None"] = "-99"
+cleandset$max_glu_serum <- as.numeric(levels(cleandset$max_glu_serum)[cleandset$max_glu_serum])
+
+
+############################## Medications  ##############################################
+#summary(cleandset)
+#unique(cleandset)
+#medicol = c('metformin') 
+#, repaglinide, nateglinide, chlorpropamide, glimepiride, acetohexamide,glipizide, glyburide, glyburide,
+#tolbutamide, pioglitazone, rosiglitazone, acarbose, miglitol, troglitazone, tolazamide, insulin, glyburide.metformin, glipizide.metformin
+#,glimepiride.pioglitazone, metformin.rosiglitazone, metformin.pioglitazone)
+levels(cleandset$metformin)[levels(cleandset$metformin) == "No"] = "0"
+levels(cleandset$metformin)[levels(cleandset$metformin) == "Steady"] = "1"
+levels(cleandset$metformin)[levels(cleandset$metformin) == "Up"] = "1"
+levels(cleandset$metformin)[levels(cleandset$metformin) == "Down"] = "1"
+#cleandset$metformin = as.numeric(levels(cleandset$metformin)[cleandset$metformin])
+
+levels(cleandset$repaglinide)[levels(cleandset$repaglinide) == "No"] = "0"
+levels(cleandset$repaglinide)[levels(cleandset$repaglinide) == "Steady"] = "1"
+levels(cleandset$repaglinide)[levels(cleandset$repaglinide) == "Up"] = "1"
+levels(cleandset$repaglinide)[levels(cleandset$repaglinide) == "Down"] = "1"
+
+levels(cleandset$nateglinide)[levels(cleandset$nateglinide) == "No"] = "0"
+levels(cleandset$nateglinide)[levels(cleandset$nateglinide) == "Steady"] = "1"
+levels(cleandset$nateglinide)[levels(cleandset$nateglinide) == "Up"] = "1"
+levels(cleandset$nateglinide)[levels(cleandset$nateglinide) == "Down"] = "1"
+
+levels(cleandset$chlorpropamide)[levels(cleandset$chlorpropamide) == "No"] = "0"
+levels(cleandset$chlorpropamide)[levels(cleandset$chlorpropamide) == "Steady"] = "1"
+levels(cleandset$chlorpropamide)[levels(cleandset$chlorpropamide) == "Up"] = "1"
+levels(cleandset$chlorpropamide)[levels(cleandset$chlorpropamide) == "Down"] = "1"
+
+levels(cleandset$glimepiride)[levels(cleandset$glimepiride) == "No"] = "0"
+levels(cleandset$glimepiride)[levels(cleandset$glimepiride) == "Steady"] = "1"
+levels(cleandset$glimepiride)[levels(cleandset$glimepiride) == "Up"] = "1"
+levels(cleandset$glimepiride)[levels(cleandset$glimepiride) == "Down"] = "1"
+
+levels(cleandset$acetohexamide)[levels(cleandset$acetohexamide) == "No"] = "0"
+levels(cleandset$acetohexamide)[levels(cleandset$acetohexamide) == "Steady"] = "1"
+levels(cleandset$acetohexamide)[levels(cleandset$acetohexamide) == "Up"] = "1"
+levels(cleandset$acetohexamide)[levels(cleandset$acetohexamide) == "Down"] = "1"
+
+levels(cleandset$glipizide)[levels(cleandset$glipizide) == "No"] = "0"
+levels(cleandset$glipizide)[levels(cleandset$glipizide) == "Steady"] = "1"
+levels(cleandset$glipizide)[levels(cleandset$glipizide) == "Up"] = "1"
+levels(cleandset$glipizide)[levels(cleandset$glipizide) == "Down"] = "1"
+
+levels(cleandset$glyburide)[levels(cleandset$glyburide) == "No"] = "0"
+levels(cleandset$glyburide)[levels(cleandset$glyburide) == "Steady"] = "1"
+levels(cleandset$glyburide)[levels(cleandset$glyburide) == "Up"] = "1"
+levels(cleandset$glyburide)[levels(cleandset$glyburide) == "Down"] = "1"
+
+levels(cleandset$tolbutamide)[levels(cleandset$tolbutamide) == "No"] = "0"
+levels(cleandset$tolbutamide)[levels(cleandset$tolbutamide) == "Steady"] = "1"
+levels(cleandset$tolbutamide)[levels(cleandset$tolbutamide) == "Up"] = "1"
+levels(cleandset$tolbutamide)[levels(cleandset$tolbutamide) == "Down"] = "1"
+
+# pioglitazone, rosiglitazone, acarbose, miglitol, troglitazone, tolazamide, insulin, glyburide.metformin, glipizide.metformin
+#,glimepiride.pioglitazone, metformin.rosiglitazone, metformin.pioglitazone)
+
+levels(cleandset$pioglitazone)[levels(cleandset$pioglitazone) == "No"] = "0"
+levels(cleandset$pioglitazone)[levels(cleandset$pioglitazone) == "Steady"] = "1"
+levels(cleandset$pioglitazone)[levels(cleandset$pioglitazone) == "Up"] = "1"
+levels(cleandset$pioglitazone)[levels(cleandset$pioglitazone) == "Down"] = "1"
+
+levels(cleandset$rosiglitazone)[levels(cleandset$rosiglitazone) == "No"] = "0"
+levels(cleandset$rosiglitazone)[levels(cleandset$rosiglitazone) == "Steady"] = "1"
+levels(cleandset$rosiglitazone)[levels(cleandset$rosiglitazone) == "Up"] = "1"
+levels(cleandset$rosiglitazone)[levels(cleandset$rosiglitazone) == "Down"] = "1"
+
+levels(cleandset$acarbose)[levels(cleandset$acarbose) == "No"] = "0"
+levels(cleandset$acarbose)[levels(cleandset$acarbose) == "Steady"] = "1"
+levels(cleandset$acarbose)[levels(cleandset$acarbose) == "Up"] = "1"
+levels(cleandset$acarbose)[levels(cleandset$acarbose) == "Down"] = "1"
+
+levels(cleandset$miglitol)[levels(cleandset$miglitol) == "No"] = "0"
+levels(cleandset$miglitol)[levels(cleandset$miglitol) == "Steady"] = "1"
+levels(cleandset$miglitol)[levels(cleandset$miglitol) == "Up"] = "1"
+levels(cleandset$miglitol)[levels(cleandset$miglitol) == "Down"] = "1"
+
+levels(cleandset$troglitazone)[levels(cleandset$troglitazone) == "No"] = "0"
+levels(cleandset$troglitazone)[levels(cleandset$troglitazone) == "Steady"] = "1"
+levels(cleandset$troglitazone)[levels(cleandset$troglitazone) == "Up"] = "1"
+levels(cleandset$troglitazone)[levels(cleandset$troglitazone) == "Down"] = "1"
+
+levels(cleandset$tolazamide)[levels(cleandset$tolazamide) == "No"] = "0"
+levels(cleandset$tolazamide)[levels(cleandset$tolazamide) == "Steady"] = "1"
+levels(cleandset$tolazamide)[levels(cleandset$tolazamide) == "Up"] = "1"
+levels(cleandset$tolazamide)[levels(cleandset$tolazamide) == "Down"] = "1"
+
+levels(cleandset$insulin)[levels(cleandset$insulin) == "No"] = "0"
+levels(cleandset$insulin)[levels(cleandset$insulin) == "Steady"] = "1"
+levels(cleandset$insulin)[levels(cleandset$insulin) == "Up"] = "1"
+levels(cleandset$insulin)[levels(cleandset$insulin) == "Down"] = "1"
+
+levels(cleandset$glyburide.metformin)[levels(cleandset$glyburide.metformin) == "No"] = "0"
+levels(cleandset$glyburide.metformin)[levels(cleandset$glyburide.metformin) == "Steady"] = "1"
+levels(cleandset$glyburide.metformin)[levels(cleandset$glyburide.metformin) == "Up"] = "1"
+levels(cleandset$glyburide.metformin)[levels(cleandset$glyburide.metformin) == "Down"] = "1"
+
+levels(cleandset$glipizide.metformin)[levels(cleandset$glipizide.metformin) == "No"] = "0"
+levels(cleandset$glipizide.metformin)[levels(cleandset$glipizide.metformin) == "Steady"] = "1"
+levels(cleandset$glipizide.metformin)[levels(cleandset$glipizide.metformin) == "Up"] = "1"
+levels(cleandset$glipizide.metformin)[levels(cleandset$glipizide.metformin) == "Down"] = "1"
+
+#,glimepiride.pioglitazone, metformin.rosiglitazone, metformin.pioglitazone)
+levels(cleandset$glimepiride.pioglitazone)[levels(cleandset$glimepiride.pioglitazone) == "No"] = "0"
+levels(cleandset$glimepiride.pioglitazone)[levels(cleandset$glimepiride.pioglitazone) == "Steady"] = "1"
+levels(cleandset$glimepiride.pioglitazone)[levels(cleandset$glimepiride.pioglitazone) == "Up"] = "1"
+levels(cleandset$glimepiride.pioglitazone)[levels(cleandset$glimepiride.pioglitazone) == "Down"] = "1"
+
+levels(cleandset$metformin.rosiglitazone)[levels(cleandset$metformin.rosiglitazone) == "No"] = "0"
+levels(cleandset$metformin.rosiglitazone)[levels(cleandset$metformin.rosiglitazone) == "Steady"] = "1"
+levels(cleandset$metformin.rosiglitazone)[levels(cleandset$metformin.rosiglitazone) == "Up"] = "1"
+levels(cleandset$metformin.rosiglitazone)[levels(cleandset$metformin.rosiglitazone) == "Down"] = "1"
+
+levels(cleandset$metformin.pioglitazone)[levels(cleandset$metformin.pioglitazone) == "No"] = "0"
+levels(cleandset$metformin.pioglitazone)[levels(cleandset$metformin.pioglitazone) == "Steady"] = "1"
+levels(cleandset$metformin.pioglitazone)[levels(cleandset$metformin.pioglitazone) == "Up"] = "1"
+levels(cleandset$metformin.pioglitazone)[levels(cleandset$metformin.pioglitazone) == "Down"] = "1"
+
+
+
+#cleandset %>% 
+#  group_by(metformin.pioglitazone) %>%
+#  summarise(Count = n())
+
+#################################DRG Classification ###############################################
+
+
+cleandset$DRGClassification[cleandset$DRG >= 1 & cleandset$DRG <= 17] =0
+cleandset$DRGClassification[cleandset$DRG >= 20 & cleandset$DRG <= 103] = 1
+cleandset$DRGClassification[cleandset$DRG >= 113 & cleandset$DRG <= 125] =2
+cleandset$DRGClassification[cleandset$DRG >= 129 & cleandset$DRG <= 159] = 3
+cleandset$DRGClassification[cleandset$DRG >= 163 & cleandset$DRG <= 208] = 4
+cleandset$DRGClassification[cleandset$DRG >= 215 & cleandset$DRG <= 316] = 5
+cleandset$DRGClassification[cleandset$DRG >= 326 & cleandset$DRG <= 395] =6
+cleandset$DRGClassification[cleandset$DRG >= 405 & cleandset$DRG <= 446] = 7
+cleandset$DRGClassification[cleandset$DRG >= 453 & cleandset$DRG <= 556] =8
+cleandset$DRGClassification[cleandset$DRG >= 573 & cleandset$DRG <= 607] =9
+cleandset$DRGClassification[cleandset$DRG == 558] =8
+cleandset$DRGClassification[cleandset$DRG == 561] =8 
+cleandset$DRGClassification[cleandset$DRG == 563] =9 
+cleandset$DRGClassification[cleandset$DRG == 566] =9 
+
+cleandset$DRGClassification[cleandset$DRG >= 614 & cleandset$DRG <= 645] =10
+cleandset$DRGClassification[cleandset$DRG >= 652 & cleandset$DRG <= 700] = 11
+cleandset$DRGClassification[cleandset$DRG >= 707 & cleandset$DRG <= 730] = 12
+cleandset$DRGClassification[cleandset$DRG >= 734 & cleandset$DRG <= 761] = 13
+cleandset$DRGClassification[cleandset$DRG >= 765 & cleandset$DRG <= 782] = 14
+cleandset$DRGClassification[cleandset$DRG >= 789 & cleandset$DRG <= 795] = 15
+cleandset$DRGClassification[cleandset$DRG >= 799 & cleandset$DRG <= 816] =16
+cleandset$DRGClassification[cleandset$DRG >= 820 & cleandset$DRG <= 849] =17
+
+cleandset$DRGClassification[cleandset$DRG >= 853 & cleandset$DRG <= 872] = 18
+cleandset$DRGClassification[cleandset$DRG >= 876 & cleandset$DRG <= 887] = 19
+cleandset$DRGClassification[cleandset$DRG >= 894 & cleandset$DRG <= 897] = 20
+cleandset$DRGClassification[cleandset$DRG >= 901 & cleandset$DRG <= 923] = 21
+cleandset$DRGClassification[cleandset$DRG >= 927 & cleandset$DRG <= 935] =22
+cleandset$DRGClassification[cleandset$DRG >= 939 & cleandset$DRG <= 951] =23
+
+cleandset$DRGClassification[cleandset$DRG >= 955 & cleandset$DRG <= 965] = 24
+cleandset$DRGClassification[cleandset$DRG >= 969 & cleandset$DRG <= 977] = 25
+cleandset$DRGClassification[cleandset$DRG >= 981 & cleandset$DRG <= 989] =0
+cleandset$DRGClassification[cleandset$DRG == 989] =0
+cleandset$DRGClassification[cleandset$DRG == 998] =0 
+cleandset$DRGClassification[cleandset$DRG == 999] =0 
+
+cleandset %>% 
+  group_by(DRGClassification) %>%
+  summarise(Count = n())
+
+
+###############################Writing into CSV #######################################
+
+write.csv(cleandset, file="~/Dilip_Docs/CUNY/DATA698_Master_Thesis_Project/Cleaned_DATA698_Dataset.csv")
+
+
+
+
+#### Features to be DROPPED diag_1, diag_2, diag_3, Primary_Diag, Secondary_Diag_1, Secondary_Diag_2, DRG. 
+#### If with Payment the modelling accuracy goes down, we can drop that, because the values are too much.
+
+
