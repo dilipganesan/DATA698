@@ -1,0 +1,4 @@
+Read Me for Feature Engineering.
+
+#### Features to be DROPPED diag_1, diag_2, diag_3, Primary_Diag, Secondary_Diag_1, Secondary_Diag_2, DRG. 
+#### If with Payment the modelling accuracy goes down, we can drop that, because the values are too much.
