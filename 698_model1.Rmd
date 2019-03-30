@@ -1,0 +1,285 @@
+---
+title: "Final Project"
+author:
+- Ali Harb
+- Dilip Ganesan
+- Raghunathan Ramnath
+date: "May 10, 2019"
+output:
+  pdf_document:
+    df_print: kable
+    fig_caption: yes
+    fig_height: 6
+    fig_width: 7
+    highlight: tango
+    keep_tex: yes
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '4'
+  prettydoc::html_pretty:
+    df_print: paged
+    highlight: github
+    theme: leonids
+    toc: yes
+geometry: margin=1in
+link-citations: yes
+fontsize: 11pt
+subtitle: CUNY SPS Masters in Data Science - DATA 698
+fontfamily: mathpazo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+
+withCallingHandlers(suppressWarnings(warning("hi")), warning = function(w) {
+    print(w)
+})
+
+# Loading Packages
+requiredpackages <- c('knitr','psych','nlme','lattice', 'kableExtra', 'psych', 'ggplot2', 'reshape2', 'corrplot', 'tidyr', 'dplyr', 'plyr', 'MASS', 'caret', 'pscl', 'lmtest', 'pROC', 'ROCR','tibble','leaps','MASS','magrittr','ggplot2','glmnet','faraway','choroplethr','gridExtra','grid','aod')
+
+for (i in requiredpackages){
+  if(!require(i,character.only=T)) install.packages(i)
+  library(i,character.only=T)
+}
+
+update_geom_defaults("point", list(size=1.5))
+theme_set(theme_grey(base_size=10))
+
+```
+
+
+\newpage
+#Load cleaned Data
+
+```{r P1, include=FALSE}
+#Load data set
+dset <- read.csv("https://raw.githubusercontent.com/dilipganesan/DATA698/master/Cleaned_Data/Cleaned_DATA698_Dataset.csv")
+                 
+head(dset)                 
+```
+
+
+```{r, echo=FALSE}
+# Obtain dimensions of dataset
+get_dims <- function(df){
+  
+  dimensions <- dim(df)
+  dimensions <- data.frame('Records' = dimensions[1],
+                           'Variables' = dimensions[2])
+  return(dimensions)
+}
+
+```
+
+
+
+```{r P2, echo=FALSE}
+
+dimensions <- get_dims(dset)
+```
+
+The current data set is composed of `r dimensions$Records[1]` records and `r dimensions$Variables[1]` variables.
+
+
+\newpage
+# Summary Statistics
+
+
+```{r P3, echo=FALSE}
+summary(dset)
+```
+
+\newpage
+# Data Analysis
+
+## Histogram
+
+```{r p6, echo=FALSE}
+
+ggplot(melt(dset), aes(x=value)) + facet_wrap(~variable, scale="free") + geom_histogram(bins=50)
+
+```
+
+\newpage
+
+## Missing Values: 
+```{r p7, echo=FALSE}
+#Replace ? with NA
+#dset[dset=="?"]<-NA
+
+## Missing Values
+options(scipen = 999)
+missing_plot <- VIM::aggr(dset,  
+                      numbers = T, 
+                      sortVars = T,
+                      col = c("lightgreen", "darkred", "orange"),
+                      labels=str_sub(names(dset), 1, 8), 
+                      ylab=c("Missing Value Counts"
+                             , "Pattern"))
+
+
+missing_plot$missings %>% 
+  mutate(
+    pct_missing = Count / nrow(dset)
+    ) %>% 
+  arrange(-pct_missing) %>% 
+  filter(pct_missing > 0) %>% 
+  kable(digits = 3, row.names = T, caption = "Variables Missing Values")  
+options(scipen=0, digits=7)
+
+```
+
+# Drop Missing Values: 
+
+Weight is missing in over 98% records. Owing to the poor interpretability of missing values and little predictive generalizability to other patients, best thing is to just drop it.
+
+Payer code and Medical Specialty of treating physician also have 40-50% missing values. We decided to drop these.
+
+```{r p8, echo=FALSE}
+
+dset$weight<-NULL
+dset$payer_code<-NULL
+dset$medical_specialty<-NULL
+dset$citoglipton<-NULL
+dset$examide<-NULL
+
+#deletes columns 'weight','payer_code','medical_specialty'
+
+#We also noticed that for two variables (drugs named citoglipton and examide), all records have the same value. So essentially these cannot provide any interpretive or discriminatory information for predicting readmission, and we dropped these columns as well. Technically, this isn't a missing value problem but rather a missing information problem.
+
+```
+
+# Addition of variables: 
+
+  Service utilization: The data contains variables for number of inpatient (admissions), emergency room visits and outpatient visits for a given patient in the previous one year. These are (crude) measures of how much hospital/clinic services a person has used in the past year.
+ 
+```{r p9, echo=FALSE}
+
+dset['service_utilization'] <- dset['number_outpatient'] + 
+   dset['number_emergency'] + dset['number_inpatient']
+
+```
+
+ Number of medication changes: The dataset contains 23 features for 23 drugs (or combos) which indicate for each of these, whether a change in that medication was made or not during the current hospital stay of patient. Medication change for diabetics upon admission has been shown by previous research to be associated with lower readmission rates. We decided to count how many changes were made in total for each patient, and declared that a new feature. The reasoning here was to both simplify the model and possibly discover a relationship with number of changes regardless of which drug was changed.
+
+
+
+
+```{r p11, echo=FALSE}
+
+dset$numchange<- dset['metformin'] + dset['repaglinide'] + dset['nateglinide'] + dset['chlorpropamide'] + dset['glimepiride']   + dset['glipizide']+ dset['glyburide']+ dset['pioglitazone']   + dset['rosiglitazone'] + dset['acarbose'] + dset['miglitol'] + dset['insulin'] + dset['glyburide.metformin']  + dset['tolazamide'] + dset['metformin.pioglitazone'] + dset['metformin.rosiglitazone']+ dset['glimepiride.pioglitazone'] + dset['glipizide.metformin'] + dset['troglitazone']+ dset['tolbutamide'] + dset['acetohexamide']
+
+
+
+```
+
+# Data Required for Modeling: 
+```{r p12, echo=FALSE}
+nset <-data.frame(
+dset$race,dset$gender,	 dset$age,	dset$admission_type_id,	dset$discharge_disposition_id,	dset$admission_source_id,	dset$time_in_hospital,	dset$num_lab_procedures,	dset$num_procedures,	dset$num_medications,	dset$number_outpatient,	dset$number_emergency,	dset$number_inpatient,	dset$number_diagnoses,	dset$max_glu_serum,	dset$A1Cresult,dset$change,	dset$diabetesMed,	dset$readmitted,dset$DRG,dset$Payment,dset$primarydiagclass,	dset$secondarydiagclass_1,	dset$tertiarydiagclass_1,	dset$DRGClassification,
+dset$service_utilization, dset$numchange)
+
+colnames(nset) <-c("gender","age","admission_type_id","discharge_disposition_id",	"admission_source_id",	"time_in_hospital",	"num_lab_procedures",	"num_procedures",	"num_medications",	"number_outpatient",	"number_emergency",	"number_inpatient",	"number_diagnoses",	"max_glu_serum","A1Cresult","change",	"diabetesMed",	"readmitted","DRG","Payment","primarydiagclass",	"secondarydiagclass_1",	"tertiarydiagclass_1",	"DRGClassification",
+"service_utilization", "numchange")
+
+
+dimensions <- get_dims(nset)
+```
+
+The new data set is composed of `r dimensions$Records[1]` records and `r dimensions$Variables[1]` variables.
+  
+
+
+# Split Data: 
+```{r p13, echo=FALSE}
+    
+    train<-sample_frac(nset, 0.7)
+    sid<-as.numeric(rownames(train)) # because rownames() returns character
+    test<-nset[-sid,]
+    
+```
+
+
+# Model1: Binary Logistic Regression Model with no DRG
+
+```{r p14, echo=FALSE}
+
+#withCallingHandlers(suppressWarnings(warning("hi")), warning = function(w) {
+ #   print(w)
+#})
+
+model1_no_drg <- train %>%dplyr::select(-train$DRG)
+model1_lg <- glm(train$readmitted ~ ., family="binomial", model1_no_drg)
+
+summary(model1_lg)
+
+# Checking residual plot for model number 1
+par(mfrow=c(2,2))
+plot(model1_lg)
+
+```
+
+coefficient is negative for gender, admission_type_id, admission_source_id,
+num_lab_procedures,num_medications, diabetesMed,       primarydiagclass,secondarydiagclass_1,DRClassification and service_utilization.
+
+standard error is high for gender, discharge_disposition_id,    num_medications,number_emergency,Payment,number_diagnoses.
+
+
+# CIs using standard errors
+
+```{r p14.2, echo=FALSE}
+
+#confidence interval using profiled log-likelihood
+#confint(model1_lg)
+
+## CIs using standard errors
+confint.default(model1_lg)
+
+```
+
+
+
+We can test for an overall effect of rank using the wald.test function of the aod library. The order in which the coefficients are given in the table of coefficients is the same as the order of the terms in the model. This is important because the wald.test function refers to the coefficients by their order in the model. We use the wald.test function. b supplies the coefficients, while Sigma supplies the variance covariance matrix of the error terms, finally Terms tells R which terms in the model are to be tested, in this case, terms 1 to 13 and 24 to 26.
+
+# Odds Ratio
+
+```{r p14.1, echo=FALSE}
+library(lmtest)
+#waldtest(model1_lg, "factor(base_repo_id)", test = "Chisq")  
+#l <- cbind(0, 0, 0, 1, -1, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
+#wald.test(b = coef(model1_lg), Sigma = vcov(model1_lg), L = l)
+
+## odds ratios only
+exp(coef(model1_lg))
+
+## odds ratios and 95% CI
+#exp(cbind(OR = coef(model1_lg), confint(model1_lg)))
+
+
+```
+
+
+# Model1: Binary Logistic Regression Model with DRG
+
+```{r p15, echo=FALSE}
+
+model1_drg <- train 
+model1_lg <- glm(train$readmitted ~ ., family="binomial", model1_drg)
+
+summary(model1_lg)
+
+# Checking residual plot for model number 1 with DRG
+par(mfrow=c(2,2))
+plot(model1_lg)
+
+```
+
+AIC is slightly more with DRG than the model with no DRG.
