@@ -168,6 +168,8 @@ prp(dtree_fit$finalModel, box.palette = "Reds", tweak = 1.2)
 #model.nn <- nnet(readmitted ~., data=trainingData[,-1], size=5, maxit=1000)
 pred.nn <- predict(dtree_fit, testData,type= "raw")
 #pred.nn <- ifelse(pred.nn > 0.5, "TRUE", "FALSE")
+table_mat <- table(testData$readmitted,pred.nn)
+table_mat
 mean(pred.nn==testData$readmitted) # Accuracy: 60.8%
 
 confusionMatrix(pred.nn, testData$readmitted )  #check accuracy
@@ -196,8 +198,10 @@ Now, our model is trained with cp = 0.001070259 . We are ready to predict classe
 Now, it's time to predict target variable for the whole test set.
 
 ```{r}
-
 test_pred_gini <- predict(dtree_fit_gini, newdata = testData)
+
+table_mat <- table(testData$readmitted,test_pred_gini)
+table_mat
 confusionMatrix(test_pred_gini, testData$readmitted )  #check accuracy
 
 ```
