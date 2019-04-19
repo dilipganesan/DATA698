@@ -151,6 +151,34 @@ mean(pred.nn==testData$readmitted) # Accuracy: 65.61%
 ```
 
 
+
+## Correlations
+
+there is positive correlation between service_utiliation and number_outpatient, inpatient and emergency.
+
+Also diabetesMed has correlation between insulin and change
+
+max_glu_serum has correlation between admission_source_id and admission_type_id
+
+```{r p7}
+library(corrplot)
+#M<-as.matrix(trainingData)
+#str(trainingData)
+trainingData$readmitted<-as.numeric(trainingData$readmitted)
+M<-cor(trainingData)
+
+#c_train <- corrplot(trainingData, method="pearson", use="complete.obs")
+
+corrplot(M, method="circle") 
+
+
+```
+
+
+## Decision Tree:
+
+The machine learning behind this method is to figure out which variable and which threshold to use at every split. One advantage of tree-based methods is that they have no assumptions about the structure of the data and are able to pick up non-linear effects if given sufficient tree depth. We can fit decision trees using the following code.
+
 ```{r}
 ############################ Decision Tree ############
 library(rpart.plot)
@@ -181,6 +209,8 @@ confusionMatrix(pred.nn, testData$readmitted )  #check accuracy
 
 Let's try to program a decision tree classifier using splitting criterion as gini  index. It is showing us the accuracy metrics for different values of cp. Here, cp is complexity parameter for our dtree.
 
+The Gini Index is calculated by subtracting the sum of the squared probabilities of each class from one.  It favors larger partitions.  Information Gain multiplies the probability of the class times the log (base=2) of that class probability.  Information Gain favors smaller partitions with many distinct values
+
 ```{r}
 set.seed(3333)
 dtree_fit_gini <- train(readmitted ~., data = trainingData, method = "rpart",
@@ -205,4 +235,5 @@ table_mat
 confusionMatrix(test_pred_gini, testData$readmitted )  #check accuracy
 
 ```
+
 
