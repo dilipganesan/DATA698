@@ -1,0 +1,236 @@
+---
+title: "Plots"
+author: "Dilip Ganesan"
+date: "4/20/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require('DataExplorer')) (install.packages('DataExplorer'))
+library(DataExplorer)
+if (!require('corrplot')) install.packages('corrplot')
+library(corrplot)
+if (!require('InformationValue')) install.packages('InformationValue')
+library(InformationValue)
+library(dplyr)
+```
+
+```{r}
+#Load data set
+dataset <- read.csv("https://raw.githubusercontent.com/dilipganesan/DATA698/master/Cleaned_Data/Cleaned_DATA698_Dataset.csv")
+#dataset
+# Cleaning the column X. 
+dataset = dataset %>%
+            select(-c("X"))   
+
+dataset = dataset %>%
+            select(-c("Primary_Diag","Secondary_Diag_1","Secondary_Diag_2", "Payment","diag_1","diag_2","diag_3", "DRG")) 
+
+
+
+
+############ Removing some of medication data from data set because of class imbalance.
+newdataset = dataset %>%
+            select(c("race","gender","age", "admission_type_id","discharge_disposition_id","admission_source_id","time_in_hospital", "num_lab_procedures","num_procedures","num_medications","number_outpatient","number_emergency","number_inpatient","number_diagnoses","max_glu_serum","A1Cresult","metformin","glimepiride","glipizide","glyburide","pioglitazone","rosiglitazone","insulin","change","diabetesMed","readmitted","primarydiagclass","secondarydiagclass_1","tertiarydiagclass_1","DRGClassification")) 
+
+##########Plots#############################
+# variable distributions
+
+plot_histogram(newdataset) 
+
+
+```
+
+####Correlation Plots
+
+```{r}
+cordata = cor(newdataset)
+corrplot(cordata, method = "circle", type = "upper")
+
+```
+
+####Training and Test Data for Logistic Regression:
+
+As a first step in data preprocessing, splitting of training and test data set, is to check the class bias. In our dataset there is class bias in our target variable
+
+Ideally, the proportion of events and non-events in the target variable should approximately be the same. So, lets first check the proportion of classes in the dependent variable readmitted.
+
+
+```{r}
+knitr::kable(table(newdataset$readmitted ))
+### Checking of class bias. The number of events happening is less than events not happening. So for prepartion of dataset to be careful.
+
+```
+
+Clearly, there is a class bias, a condition observed when the proportion of events is much smaller than proportion of non-events. So we must sample the observations in approximately equal proportions to get better models.
+
+As a next step we are going through the process to remove class bias.
+
+One way to address the problem of class bias is to draw the 0s and 1s for the trainingData in equal proportions. In doing so, we will put rest of the inputData not included for training into testData. 
+As a result, the size of trainingData sample will be smaller that validation.
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+########### Modelling
+table(newdataset$readmitted )
+### Checking of class bias. The number of events happening is less than events not happening. So for prepartion of dataset to be careful.
+# Create Training Data
+input_ones <- newdataset[which(newdataset$readmitted == 1), ]  # all 1's
+input_zeros <- newdataset[which(newdataset$readmitted == 0), ]  # all 0's
+set.seed(100)  # for repeatability of samples
+input_ones_training_rows <- sample(1:nrow(input_ones), 0.7*nrow(input_ones))  # 1's for training
+input_zeros_training_rows <- sample(1:nrow(input_zeros), 0.7*nrow(input_ones))  # 0's for training. Pick as many 0's as 1's
+training_ones <- input_ones[input_ones_training_rows, ]  
+training_zeros <- input_zeros[input_zeros_training_rows, ]
+trainingData <- rbind(training_ones, training_zeros)  # row bind the 1's and 0's 
+
+# Create Test Data
+test_ones <- input_ones[-input_ones_training_rows, ]
+test_zeros <- input_zeros[-input_zeros_training_rows, ]
+testData <- rbind(test_ones, test_zeros)  # row bind the 1's and 0's 
+
+####################
+
+```
+
+Once the trainingData and testData are created from our dataset, the next step is to create the Binary Logistic Regression. 
+
+#### Binary Regression Base Model
+
+As first step, we are going to run our model using all the variables that are available in the data set.
+This includes DRGClassification also as predictor variable. 
+
+```{r}
+logitMod <- glm(readmitted ~ ., data=trainingData, family=binomial(link="logit"))
+summary(logitMod)
+predicted <- predict(logitMod, testData, type="response")  
+```
+
+#####Summary 
+
+The summary(logitMod) gives the beta coefficients, Standard error, z Value and p Value. As a next step of summary analysis we have to look for variables don’t turn out to be significant in the model (i.e. p Value turns out greater than significance level of 0.05). The following values are considered to be significant in our model. age, admission_source_id, time_in_hospital, number_emergency, number_inpatient, number_diagnoses, max_glu_serum, A1Cresult, metformin, diabetesMed, primarydiagclass, tertiarydiagclass_1. The above variables becomes the next set of variables for our step wise regression.
+
+##### Optimal CutOff:
+
+The default cutoff prediction probability score is 0.5 or the ratio of 1’s and 0’s in the training data. But sometimes, tuning the probability cutoff can improve the accuracy in both the training and test dataset. The optimal cutoff is used to improve the prediction of 1’s, 0’s, both 1’s and 0’s and to reduce the misclassification error. Below we will compute the optimal score that we use to minimize the misclassification error for the model.
+
+```{r}
+#Optimal Cut Off
+optCutOff <- optimalCutoff(testData$readmitted, predicted)[1] 
+optCutOff
+```
+
+##### MisClassification Error:
+Misclassification error is the percentage mismatch of predcited vs actuals, irrespective of 1’s or 0’s. The lower the misclassification error, the better is our model.
+
+```{r}
+#Classfication Error.
+misClassError(testData$readmitted, predicted, threshold = optCutOff)
+
+```
+
+#### VIF
+From our corrplot analysis we did not find much correlation between our predictor variables and also between predictor variable and target variable. 
+Further as next step in our regression analysis, we want to confirm the same by validating the variance inflation factor.
+We should check for multicollinearity in the model. As seen below, all predictor variables in the model have VIF well below 4.
+
+```{r}
+#VIF Factor
+knitr::kable(car::vif(logitMod))
+```
+
+#### ROC
+
+Receiver Operating Characteristics Curve traces the percentage of true positives accurately predicted by a given logit model as the prediction probability cutoff is lowered from 1 to 0. For a good model, as the cutoff is lowered, it should mark more of actual 1’s as positives and lesser of actual 0’s as 1’s. So for a good model, the curve should rise steeply, indicating that the TPR (Y-Axis) increases faster than the FPR (X-Axis) as the cutoff score decreases. Greater the area under the ROC curve, better the predictive ability of the model. We will not look at the curve for our model. From the below curve we can see our curve with AUROC value of 0.625. The value is decent value, though not good. 
+
+```{r}
+#ROC Plot
+plotROC(testData$readmitted, predicted)
+```
+
+
+
+```{r}
+#Confusion Matrix
+predicted = ifelse(predicted > 0.5, 1, 0)
+caret::confusionMatrix(factor(testData$readmitted), factor(predicted))
+
+```
+
+From the confusion Matrix analysis, we come to the conclusion that our model Accuracy is 67.88%. We are able to predict with 67.88% accuracy that with DRG as a predictor variable the diabetic mellitus patient will get readmitted. 
+When you look at the Sensitivity of our model it is pretty good. Sensitivity (or True Positive Rate) is the percentage of 1’s (actuals) correctly predicted by the model. Which is what we are looking for in our readmission analysis.
+
+
+#### Binary Regression Base With Reduced Predictors:
+
+From our first model we are going to drop those predictor variables which we find in statistically less signficant based on p-value(<0.05). With that analysis the list of variables which will be used for this model are.
+age, admission_source_id, time_in_hospital, number_emergency, number_inpatient, number_diagnoses, max_glu_serum, A1Cresult, metformin, diabetesMed, primarydiagclass, tertiarydiagclass_1
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+logitMod_2 <- glm(readmitted ~ age + admission_source_id + time_in_hospital + number_emergency + number_inpatient + number_diagnoses + max_glu_serum + A1Cresult + metformin + diabetesMed + primarydiagclass + tertiarydiagclass_1, data=trainingData, family=binomial(link="logit"))
+summary(logitMod_2)
+predicted_2 <- predict(logitMod_2, testData, type="response")  
+
+plotROC(testData$readmitted, predicted_2)
+
+predicted_2 = ifelse(predicted_2 > 0.5, 1, 0)
+
+```
+
+```{r}
+caret::confusionMatrix(factor(testData$readmitted), factor(predicted_2))
+
+```
+
+From our reduced predictor variable regression model, the Accuracy of our model has gone up, though not by a greater percent, but to some degree to a value of 68.48%. This shows that DRGClassification acts a negative parameter from logistic regression modelling prespective. We would like to see how the other logistic regression and ensemble models before drawing conclusions.
+
+
+#### Binary Regression Base With Log transformation:
+
+From the plots in our data preparation step, we found some of the variables are skewed either to the left or right. Out of those parameters, the parameters which are important to us as part of our Literature review are Age, Time_In_Hospital and DRGClassification. So in our base model we want to do a log transformation on these parameters and see whether the accuracy our model increases.
+
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+
+trainingData = 
+  trainingData %>% 
+  mutate(
+    log_age = log(age),
+    log_timeinhospital = log(time_in_hospital),
+    log_numofMedications = log(num_medications),log_numoflabProcedures = log(num_lab_procedures),
+    log_DRGClassification =log(DRGClassification))
+
+trainingData$log_DRGClassification[!is.finite(trainingData$log_DRGClassification)] = 0
+
+testData = 
+  testData %>% 
+  mutate(
+    log_age = log(age),
+    log_timeinhospital = log(time_in_hospital),
+    log_numofMedications = log(num_medications),log_numoflabProcedures = log(num_lab_procedures),
+    log_DRGClassification =log(DRGClassification))
+
+testData$log_DRGClassification[!is.finite(testData$log_DRGClassification)] = 0
+
+logitMod_3 <- glm(readmitted ~ log_age + admission_source_id + log_timeinhospital + number_emergency + number_inpatient + number_diagnoses + max_glu_serum + A1Cresult + metformin + diabetesMed + primarydiagclass + tertiarydiagclass_1 + log_DRGClassification + log_numofMedications + log_numoflabProcedures, data=trainingData, family=binomial(link="logit"))
+
+summary(logitMod_3)
+predicted_3 <- predict(logitMod_3, testData, type="response")  
+
+plotROC(testData$readmitted, predicted_3)
+
+predicted_3 = ifelse(predicted_3 > 0.5, 1, 0)
+
+
+```
+
+
+```{r}
+
+caret::confusionMatrix(factor(testData$readmitted), factor(predicted_3))
+
+```
+
