@@ -137,6 +137,7 @@ plot(model.rf1)
 
 ```
 
+
 ```{r}
 ############################ NN Network############
 require(neuralnet)
@@ -179,12 +180,14 @@ corrplot(M, method="circle")
 
 The machine learning behind this method is to figure out which variable and which threshold to use at every split. One advantage of tree-based methods is that they have no assumptions about the structure of the data and are able to pick up non-linear effects if given sufficient tree depth. We can fit decision trees using the following code.
 
+this model is based on 30 predictor variables and 15884 samples. with cp=0.0008954804, RMSE =0.48 and Rsq is 0.069.
+
 ```{r}
 ############################ Decision Tree ############
 library(rpart.plot)
 require(caret)
 trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
-set.seed(3333)
+#set.seed(3333)
 dtree_fit <- train(readmitted ~., data = trainingData, method = "rpart",
                    parms = list(split = "information"),
                    trControl=trctrl,
@@ -202,7 +205,37 @@ mean(pred.nn==testData$readmitted) # Accuracy: 60.8%
 
 confusionMatrix(pred.nn, testData$readmitted )  #check accuracy
 
+
 ```
+## Decision Tree with no DRG:
+
+Lets try to compare the above model with no DRG.Accuracy is now 60.7% with 29 predictor variables. when tested with test data, accuracy is around 59.2%. 
+There is slight variation on the RMSE, RSq and MAE scores with and without DRG.
+
+```{r}
+############################ Decision Tree ############
+
+trainingdata_ndrg=trainingData[, -31]
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+#set.seed(3333)
+dtree_fit_ndrg <- train(readmitted ~., data = trainingdata_ndrg, method = "rpart",
+                   parms = list(split = "information"),
+                   trControl=trctrl,
+                   tuneLength = 10)
+
+dtree_fit_ndrg
+prp(dtree_fit_ndrg$finalModel, box.palette = "Reds", tweak = 1.2)
+
+pred.nn <- predict(dtree_fit_ndrg, testData,type= "raw")
+table_mat <- table(testData$readmitted,pred.nn)
+table_mat
+mean(pred.nn==testData$readmitted) # Accuracy: 60.7%
+
+confusionMatrix(pred.nn, testData$readmitted )  #check accuracy
+
+
+```
+
 
 
 #Training the Decision Tree classifier with criterion as gini index
@@ -212,7 +245,7 @@ Let's try to program a decision tree classifier using splitting criterion as gin
 The Gini Index is calculated by subtracting the sum of the squared probabilities of each class from one.  It favors larger partitions.  Information Gain multiplies the probability of the class times the log (base=2) of that class probability.  Information Gain favors smaller partitions with many distinct values
 
 ```{r}
-set.seed(3333)
+#set.seed(3333)
 dtree_fit_gini <- train(readmitted ~., data = trainingData, method = "rpart",
                    parms = list(split = "gini"),
                    trControl=trctrl,
@@ -236,4 +269,29 @@ confusionMatrix(test_pred_gini, testData$readmitted )  #check accuracy
 
 ```
 
+
+#Training the Decision Tree (with no DRG) classifier with criterion as gini index
+
+There is no difference found when using the gini index with either DRG or no DRG classification.
+```{r}
+#set.seed(3333)
+dtree_fit_gini_ndrg <- train(readmitted ~., data = trainingdata_ndrg, method = "rpart",
+                   parms = list(split = "gini"),
+                   trControl=trctrl,
+                   tuneLength = 10)
+dtree_fit_gini_ndrg
+
+prp(dtree_fit_gini_ndrg$finalModel, box.palette = "Blues", tweak = 1.2)
+
+```
+
+
+```{r}
+test_pred_gini_ndrg <- predict(dtree_fit_gini_ndrg, newdata = testData)
+
+table_mat <- table(testData$readmitted,test_pred_gini_ndrg)
+table_mat
+confusionMatrix(test_pred_gini_ndrg, testData$readmitted )  #check accuracy
+
+```
 
