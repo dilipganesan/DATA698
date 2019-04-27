@@ -1,0 +1,214 @@
+---
+title: "Data698_Modelling"
+author: "Dilip Ganesan"
+date: "4/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Load data set
+dataset <- read.csv("https://raw.githubusercontent.com/dilipganesan/DATA698/master/Cleaned_Data/Cleaned_DATA698_Dataset.csv")
+#dataset
+# Cleaning the column X. 
+dataset = dataset %>%
+            select(-c("X"))   
+dataset = dataset %>%
+            select(-c("Primary_Diag","Secondary_Diag_1","Secondary_Diag_2", "Payment","diag_1","diag_2","diag_3", "DRG")) 
+
+summary(dataset)        
+sapply(dataset, class)
+
+# Renaming certain column namse.
+
+# Creation of addition variables from Raghu Code.
+dataset['service_utilization'] <- dataset['number_outpatient'] + 
+   dataset['number_emergency'] + dataset['number_inpatient']
+############ Removing some of medication data from data set because of class imbalance.
+summary(dataset)
+newdataset = dataset %>%
+            select(c("race","gender","age", "admission_type_id","discharge_disposition_id","admission_source_id","time_in_hospital", "num_lab_procedures","num_procedures","num_medications","number_outpatient","number_emergency","number_inpatient","number_diagnoses","max_glu_serum","A1Cresult","metformin","glimepiride","glipizide","glyburide","pioglitazone","rosiglitazone","insulin","change","diabetesMed","readmitted","primarydiagclass","secondarydiagclass_1","tertiarydiagclass_1","DRGClassification")) 
+
+##########Plots#############################
+# variable distributions
+boxplot(newdataset$age, main = "age distribution") # age: mode 70-80yrs normal distribution, right skewed
+hist(newdataset$age, main = "age distribution") # age: mode 70-80yrs normal distribution, right skewed
+plot(newdataset$gender, main = "gender distribution") # gender: female 53% male 47%
+plot(newdataset$A1Cresult, main = "A1C") # A1Cresult: 84% no A1c results, 8% >8
+plot(newdataset$readmitted, main = "readmissions") # readmission: >50% no readmission
+plot(newdataset$admission_source, main = "admission source") # emergency 60%
+plot(newdataset$discharged_to, main = "Discharged") # transferred to another facility 70%
+plot(newdataset$DRGClassification, main = "DRG Classification")
+# race: 75% caucasian
+# admission source: emergency >50%
+# time in hospital: mode 3 days
+# max_glu_serum: none in >90%
+
+g <- ggplot(newdataset, aes(x=age, y=time_in_hospital))
+g + geom_boxplot(aes(fill=readmitted))
+# patients with <30 day readmissions in their 70s-80s had longer time in hospital
+# patients in their 30s-40s with <30 day readmission spent longer in the hospital
+
+g <- ggplot(newdataset,aes(x=A1Cresult, y=num_medications))
+g + geom_boxplot(aes(color=A1Cresult)) 
+# not much difference in distribution across groups
+
+g <- ggplot(newdataset,aes(x=A1Cresult, y=time_in_hospital))
+g + geom_boxplot(aes(fill=diabetesMed)) + facet_grid(. ~ readmitted)
+# patients with no readmission had generally had less time in hospital
+# for those not taking diabetes medication
+
+g <- ggplot(newdataset,aes(x=age, y=num_medications))
+g + geom_boxplot(aes(fill=age))
+# number of medications was highest in 60-70yr olds
+
+g <- ggplot(newdataset,aes(x=diag2, y=time_in_hospital))
+g + geom_boxplot(aes(fill=diag2))
+# respiratory and injury diagnosis 2 stayed longer in hospital
+
+
+
+
+########### Modelling
+table(newdataset$readmitted )
+### Checking of class bias. The number of events happening is less than events not happening. So for prepartion of dataset to be careful.
+# Create Training Data
+input_ones <- newdataset[which(newdataset$readmitted == 1), ]  # all 1's
+input_zeros <- newdataset[which(newdataset$readmitted == 0), ]  # all 0's
+set.seed(100)  # for repeatability of samples
+input_ones_training_rows <- sample(1:nrow(input_ones), 0.7*nrow(input_ones))  # 1's for training
+input_zeros_training_rows <- sample(1:nrow(input_zeros), 0.7*nrow(input_ones))  # 0's for training. Pick as many 0's as 1's
+training_ones <- input_ones[input_ones_training_rows, ]  
+training_zeros <- input_zeros[input_zeros_training_rows, ]
+trainingData <- rbind(training_ones, training_zeros)  # row bind the 1's and 0's 
+
+# Create Test Data
+test_ones <- input_ones[-input_ones_training_rows, ]
+test_zeros <- input_zeros[-input_zeros_training_rows, ]
+testData <- rbind(test_ones, test_zeros)  # row bind the 1's and 0's 
+
+####################
+traininDataNoDRG = trainingData %>% 
+                  select(-c("DRGClassification"))
+testDataNoDRG = testData %>%
+                select(-c(DRGClassification))
+
+###########################GLM####################
+logitMod <- glm(readmitted ~ ., data=trainingData, family=binomial(link="logit"))
+summary(logitMod)
+##1. Remove variables with high p value.
+##2. Do log transformation on the skewed variables...
+
+#predicted <- plogis(predict(logitMod, testData))  # predicted scores
+# or
+predicted <- predict(logitMod, testData, type="response")  # predicted scores
+plotROC(testData$readmitted, predicted)
+
+####################
+predicted <- ifelse(predicted > 0.5, 1, 0)
+#predicted_2 <- ifelse(predicted == 1, "TRUE", "FALSE")
+mean(predicted==testData$readmitted) # Accuracy: 67.6%
+
+logitMod_NODRG <- glm(readmitted ~ ., data=traininDataNoDRG, family=binomial(link="logit"))
+
+#predicted <- plogis(predict(logitMod, testData))  # predicted scores
+# or
+predicted_2 <- predict(logitMod_NODRG, testDataNoDRG, type="response")  # predicted scores
+predicted_2<- ifelse(predicted > 0.5, 1, 0)
+mean(predicted_2==testDataNoDRG$readmitted) # Accuracy: 67.86%
+
+
+################Optimal Cutoff#################
+library(InformationValue)
+optCutOff <- optimalCutoff(testData$readmitted, predicted)[1] 
+optCutOff
+##############vif############
+car::vif(logitMod_NODRG)
+
+##########
+
+###################ConfusionMatrix#######
+confusionMatrix(factor(testData$readmitted), factor(predicted))
+confusionMatrix(factor(testDataNoDRG$readmitted), factor(predicted_2))
+## 3 Analysis on the confusion Matrix.
+
+#######################Random Forrest#################
+table(trainingData$readmitted )
+table(testData$readmitted )
+
+trainingData$readmitted <- ifelse(trainingData$readmitted == 1, "TRUE", "FALSE")
+testData$readmitted <- ifelse(testData$readmitted == 1, "TRUE", "FALSE")
+trainingData$readmitted <- as.factor(trainingData$readmitted)
+testData$readmitted <- as.factor(testData$readmitted)
+table(trainingData$readmitted )
+model.rf1 <-randomForest(readmitted~., data=trainingData[,-1], ntree=10, na.action=na.exclude, importance=T,proximity=T) 
+print(model.rf1) 
+model.rf2 <-randomForest(readmitted~., data=trainingData, ntree=20, na.action=na.exclude, importance=T,proximity=T) 
+print(model.rf2) 
+model.rf3 <-randomForest(readmitted~., data=trainingData, ntree=30, na.action=na.exclude, importance=T,proximity=T) 
+print(model.rf3) 
+model.rf4 <-randomForest(readmitted~., data=trainingData, ntree=40, na.action=na.exclude, importance=T,proximity=T) 
+print(model.rf4) 
+model.rf5 <-randomForest(readmitted~., data=trainingData, ntree=50, na.action=na.exclude, importance=T,proximity=T) 
+print(model.rf5) 
+mtry <- tuneRF(trainingData[,-1], trainingData$readmitted, ntreeTry=40,stepFactor=1.5, improve=0.01, trace=TRUE, plot=TRUE)
+
+model.rf <- randomForest(readmitted~., data=trainingData, ntree=100, mtry = 8, na.action=na.exclude, importance=T,proximity=T)
+pred.rf <- predict(model.rf, testData)
+mean(pred.rf==testData$readmitted) # Accuracy: 60.86%
+
+plot(model.rf)
+#plot(gg_vimp(model.rf))
+
+############################ NN Network############
+
+model.nn <- nnet(readmitted ~., data=trainingData[,-1], size=5, maxit=1000)
+pred.nn <- predict(model.nn, testData,type= "raw")
+pred.nn
+pred.nn <- ifelse(pred.nn > 0.5, "TRUE", "FALSE")
+mean(pred.nn==testData$readmitted) # Accuracy: 65.61%
+
+plotnet(model.nn)# 3. Close the file
+
+
+
+############################XG Boost################
+
+labels <- trainingData$readmitted 
+ts_label <- testData$readmitted
+
+noretrainingData = trainingData %>%
+                  select(-c("readmitted"))  
+noretestData = testData %>%
+                  select(-c("readmitted"))  
+
+new_tr = as.matrix(sapply(noretrainingData, as.numeric))
+new_ts <- as.matrix(sapply(noretestData, as.numeric))
+
+dtrain <- xgb.DMatrix(data = new_tr,label = labels) 
+dtest <- xgb.DMatrix(data = new_ts,label=ts_label)
+
+params <- list(booster = "gbtree", objective = "binary:logistic", eta=0.3, gamma=0, max_depth=6, min_child_weight=1, subsample=1, colsample_bytree=1)
+
+xgbcv <- xgb.cv( params = params, data = dtrain, nrounds = 100, nfold = 5, showsd = T, stratified = T, print.every.n = 10, early.stop.round = 50, maximize = F)
+#####Stopping at 50 rounds
+xgb1 <- xgb.train (params = params, data = dtrain, nrounds = 50, watchlist = list(val=dtest,train=dtrain), print.every.n = 10, early.stop.round = 10, maximize = F , eval_metric = "error")
+xgbpred <- predict (xgb1,dtest)
+xgbpred <- ifelse (xgbpred > 0.5,1,0)
+
+confusionMatrix(factor(xgbpred),factor(ts_label))
+# Accuracy 60.65. Almost identical to random forrest
+
+mat <- xgb.importance (feature_names = colnames(new_tr),model = xgb1)
+xgb.plot.importance (importance_matrix = mat[1:20]) 
+############################
+
+
+####K Means Clustering######
+library("factoextra")
+
+
+```
