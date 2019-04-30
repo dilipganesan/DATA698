@@ -3,9 +3,9 @@ title: "DATA698_Master_Thesis_Document"
 author: "Ali Harb, Dilip Ganesan and Raghunathan Ramnath"
 date: "4/19/2019"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -18,7 +18,8 @@ withCallingHandlers(suppressWarnings(warning("hi")), warning = function(w) {
 })
 # Loading Packages
 requiredpackages <- c('knitr','psych','nlme','lattice', 'kableExtra', 'psych', 'ggplot2', 'reshape2', 'corrplot', 'tidyr', 'dplyr',  
-                      'caret', 'pscl', 'lmtest', 'pROC', 'ROCR','tibble','leaps','magrittr','ggplot2','glmnet','faraway','gridExtra','randomForest','nnet','neuralnet','DataExplorer','InformationValue')
+                      'caret', 'pscl', 'lmtest', 'pROC', 'ROCR','tibble','leaps','magrittr','ggplot2','glmnet','faraway','gridExtra','randomForest'
+                      ,'nnet','neuralnet','DataExplorer','InformationValue','party','NeuralNetTools','xgboost','rpart.plot')
 for (i in requiredpackages){
   if(!require(i,character.only=T)) install.packages(i)
   library(i,character.only=T)
@@ -103,7 +104,6 @@ The most challenging aspect of data collection is getting the DRG data for this 
 
 Below you can find a pictorial representation of the process that we have used for data extraction.
 
-![DRG Extract](DGRExtract.png) 
 
 We started with the Step 2, the more challenging aspect of data extraction. Normally payer industries use to extract DRG by getting licensed software from different vendors. 3M DRG software is the industry wide solution for getting the DRG. Since using these software costs a lot, we did not want to follow that path. We digged through some research and finally settled on extracting DRG using online Find A Code website.
 
@@ -137,79 +137,77 @@ Identification, development, and testing of task-appropriate regression models. 
 
 ####Ensemble Method Modeling: 
 
-As part of Ensemble methods, we are going to check our prediction using Decision Tree, Random Forrest, Neural Network and XG-Boost algorithms to check whether the accuracy of the model goes up or down.
+As part of Ensemble methods, we are going to check our prediction using Decision Tree, Random Forest, Neural Network and XG-Boost algorithms to check whether the accuracy of the model goes up or down.
 Results of all models were then compared to see which of these models could better predict hospital readmission and whether DRG has a role in the readmission or not.
 
 
 ###Data Exploration:
 
-The diabetes dataset we have used consists of 10,000 records and 54 features. Below given is the detailed description of some of the important features in the dataset.
+The diabetes dataset we have used consists of 10,000 records and 56 features. Below given is the detailed description of some of the important features in the dataset.
 
-1. Row ID: Continous running number. Provides a unique identifier for each observation. Missing data 0%
+1. Encounter ID: Continous running number. Provides a unique identifier for each claim record. No NAs
 
-2. Race: Categorical values. Values: African-American Asian Caucasian Hispanic Other. Missing data 2.21%
+2. Race: Categorical values. Values: African-American, Asian, Caucasian, Hispanic, Other. NAs 2.21%
 
-3. Gender: Categorical values. Values: Male Female. Missing data 0%
+3. Gender: Categorical values. Values: Male, Female, Unkown. No NAs
 
-4. Age: Categorical values. Values: [0-10) [10-20) [20-30) [30-40) [40-50) [50-60) [60-70)
-[70-80) [80-90) [90-100). Missing data 0%
+4. Age: Categorical values. Values: Instead of giving unique age ranges becuase of PHI viloation, we have age ranges. [0-10), [10-20), [20-30), [30-40), [40-50), [50-60), [60-70), [70-80), [80-90), [90-100). No NAs
 
-5. Weight: Numerical values. Values: Weight of a patient. Missing data 95.92%. Most of the data is missing.
+5. Weight: Numerical values. Values: Weight of a patient. NAs 95.92%. We need to see whether we are going to use in our Model.
 
-6. Admission type ID: Categorical values. Values: Elective, Emergency, Newborn, Not Available, Not Mapped, Urgent. Missing data 7.21%
+6. Admission type ID: Categorical values. Values: Elective, Emergency, Newborn, Not Available, Not Mapped, Urgent. NAs 7.21%
 
-7. Discharge disposition ID: Categorical values. Values: 22 levels - Admitted as an inpatient to this hospital, Not Mapped et.al . Missing data 4.69%
+7. Discharge disposition ID: Categorical values. Values: 22 levels - Admitted as an inpatient to this hospital, Not Mapped et.al . NAs 4.69%
 
-8. Admission source ID: Categorical values. Values: 11 levels - Clinic Referral Court/Law, Enforcement Emergency Room HMO Referral Not Available Transfer from another health care facility. Missing data 9.36%
+8. Admission source ID: Categorical values. Values: 11 levels - Clinic Referral Court/Law, Enforcement, Emergency Room, HMO Referral, Not Available Transfer from another health care facility. NAs 9.36%
 
-9. Time in hospital: Numerical values. Values: Days spent in the hospital by the patient. Missing data 0%
+9. Time in hospital: Numerical values. Values: Days spent in the hospital by the patient. NAs 0%
 
-10. Payer code: Categorical values. Values: BC CH CM CP DM HM MC MD OG OT PO SI SP UN WC. Missing data 53.41%
+10. Payer code: Categorical values. Values: BC CH CM CP DM HM MC MD OG OT PO SI SP UN WC. NAs 53.41%. Almost 50% missing.
 
-11. Medical specialty: Categorical values. Values: 52 Levels - Anesthesiology-PediatricCardiology Cardiology-Pediatric Emergency/Trauma ... Urology. Missing data 41%
+11. Medical specialty: Categorical values. Values: 52 Levels - Anesthesiology-PediatricCardiology Cardiology-Pediatric Emergency/Trauma ... Urology. NAs 41%
 
-12. Number lab procedures: Numerical values. Values: Number of lab procedures done. Missing data 0%
+12. Number lab procedures: Numerical values. Values: Number of lab procedures done. No NA
 
-13. Number procedures: Numerical values. Values: Number of procedures done. Missing data 0%
+13. Number procedures: Numerical values. Values: Number of procedures done. No NA
 
-14. Number medications: Numerical values. Values: Number of medications prescribed. Missing data 0%
+14. Number medications: Numerical values. Values: Number of medications prescribed. No NA
 
-15. Number outpatient: Numerical values. Values: Number of outpatient visits by the patient. Missing data 0%
+15. Number outpatient: Numerical values. Values: Number of outpatient visits by the patient. No NA
 
-16. Number emergency: Numerical values. Values: Number of emergency visits by the patient. Missing data 0%
+16. Number emergency: Numerical values. Values: Number of emergency visits by the patient. No NA
 
-17. Number inpatient: Numerical values. Values: Number of inpatient visits by the patient. Missing data 0%
+17. Number inpatient: Numerical values. Values: Number of inpatient visits by the patient. No NA
 
-18. Diagnoses 1: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 457 Levels: 11 110 112 141 150 151 153 154 155 156 157 158 160 161 162 164 171 174 180 182 183 184 185 187 188 ... V71. Missing data 0.02%
+18. Diagnoses 1: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 457 Levels: 11 110 112 141 150 151 153 154 155 156 157 158 160 161 162 164 171 174 180 182 183 184 185 187 188 ... V71. NAs 0.02%
 
-19. Diagnoses 2: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 429 Levels: 11 110 112 131 135 136 138 150 151 153 154 155 156 157 162 171 173 174 185 188 189 193 196 197 198 ... V85. Missing data 0.59%
+19. Diagnoses 2: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 429 Levels: 11 110 112 131 135 136 138 150 151 153 154 155 156 157 162 171 173 174 185 188 189 193 196 197 198 ... V85. NAs 0.59%
 
-20. Diagnoses 3: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 460 Levels: 110 112 117 135 138 150 151 153 154 155 162 170 172 174 179 185 188 189 196 197 198 199 200 201 202 ... V85. Missing data 2.08%
+20. Diagnoses 3: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 460 Levels: 110 112 117 135 138 150 151 153 154 155 162 170 172 174 179 185 188 189 196 197 198 199 200 201 202 ... V85. NAs 2.08%
 
-21. Number diagnoses: Numerical values. Values: Number of diagnoses done by the patient. Missing data 0%
+21. Number diagnoses: Numerical values. Values: Number of diagnoses done by the patient. No NAs
 
-22. Max glu serum: Categorical values. Indicates the range of the result or if the test was not taken. Values: >200, >300, Norm and None if not measured. Missing data 0%
+22. Max glu serum: Categorical values. Indicates the range of the result or if the test was not taken. Values: >200, >300, Norm and None if not measured. No NAs
 
-23. A1Cresult: Categorical values. Indicates the range of the result or if the test was not taken. Values: >7 (if result was greater than 7\%), >8 (if result was greater than 8\%), None (if test not taken), and Norm (if result is normal). Missing data 0%
+23. A1Cresult: Categorical values. Indicates the range of the result or if the test was not taken. Values: >7 (if result was greater than 7%), >8 (if result was greater than 8%), None (if test not taken), and Norm (if result is normal). No NAs
 
 24. 23 features of medications: 
 
 	Metformin, Repaglinide, Nateglinide, Chlorpropamide, Glimepiride, Acetohexamide, Glipizide, Glyburide, Tolbutamide, Pioglitazone, Rosiglitazone, Acarbose, Miglitol, Troglitazone, Tolazamide, 
 	Examide, Citoglipton, Insulin, Glyburide metformin, Glipizide metformin, Glimepiride pioglitazone, Metformin rosiglitazone, Metformin pioglitazone. 
-	Values: Down (if the dosage is reduce ), No (if the medicine is not given), Steady (if the dosage is steady), Up (if the dosage is increased). Missing data 0%
+	Values: Down (if the dosage is reduce ), No (if the medicine is not given), Steady (if the dosage is steady), Up (if the dosage is increased). No NAs
 
-25. Change: Categorical values. Values: Ch (if change in medicine), No (if no change in medicine). Missing data 0%
+25. Change: Categorical values. Values: Ch (if change in medicine), No (if no change in medicine). No NAs
 
-26. Diabetes medicine: Categorical values. Values: No Yes. Missing data 0%
+26. Diabetes medicine: Categorical values. Values: No Yes. No NAs
 
-27. Readmitted: Categorical values. Values: FALSE TRUE. Missing data 0%
+27. Readmitted: Categorical values. Values: FALSE TRUE. No NAs
 
-28. DRG: Categorical values. Values : Different types of Diagnosis Related Group 500 levels: Not many missing values.
+28. DRG: Categorical values. Values : Different types of Diagnosis Related Group 500 levels: No NAs.
 
 29. DRG Payment: Numerical Values. Values are payment amount for each DRG.
 
 ###Data Preparation:
-
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
 #Load data set
@@ -225,10 +223,39 @@ dataset = dataset %>%
 newdataset = dataset %>%
             select(c("race","gender","age", "admission_type_id","discharge_disposition_id","admission_source_id","time_in_hospital", "num_lab_procedures","num_procedures","num_medications","number_outpatient","number_emergency","number_inpatient","number_diagnoses","max_glu_serum","A1Cresult","metformin","glimepiride","glipizide","glyburide","pioglitazone","rosiglitazone","insulin","change","diabetesMed","readmitted","primarydiagclass","secondarydiagclass_1","tertiarydiagclass_1","DRGClassification")) 
 
-plot_histogram(newdataset) 
+```
 
+The data set contains total of 54 variables. We investigated each variable did data transformation and picked the variables which are best suited for our modeling. We will look at the variables which were dropped, why we dropped them and variables which went through transformation.
+
+The following variables were dropped. Encounter ID, Patient_Nbr. The two variables were dropped because they are running numbers and does not add any value to our model. As a next step we looked for variables with missing rows. There were few variables which were almost 90% empty. So we decided to drop those variables. These variables are Weight, Payer Code and Specialty.  
+
+Next we inspected variable Gender There were three factors with respect to gender, When looked at the data only 3 rows has factor level apart from Male and Female. We dropped those 3 rows, it will not affect our model dropping those 3 rows. Other variable with patient population which is important is Race. We collapsed race in to following categories (1- Other, 2 - African American, 3 - Asian, 4- Caucasian, 5 - Hispanic). The other variable Age which was in a set of range of values, instead of age range we took average of age range and used the average to replace the age range.
+
+From data prespective, we looked at unique Discharge values in data set. There were four data values which were related to Death of patient in the hospital. Since a person dying in hospital has no chance of getting re admitted, we dropped those rows. On analysis of medications, we figured Examide and Citoglipton was not administered to the entire patient population. So it is of no use to add these two in our analysis and it was decided to drop. 
+
+Some data rows were collapsed based on what makes clinical significance in the data set. Admit Source will be collapsed from 11 values to 5 values. 
+The rows with only the following values were picked for dataset(Namely 1- Referral, 7- Emergency, 4 - Transfer, 11 - Delivery, 20 - Not Mapped). Same analysis was done for Discharge status, discharge dtatus has 30 values, we will collapse them to 7 (1 - Discharged, 2 - Transfer, 7- left AMA,14-Hospice, 9-Admitted, 25 Not Mapped, 12 - Still a patient). Admit Type was collapsed to only 4 values (1- Emergency, 3 - Elective, 4 - New Born, 5 - Not Mapped). 
+
+Some of the variables were in we changed from Yes/No to 1/0. Those variables are Readmitted, Change of Medication, Diabetes Medication, Hb1AC Test Result, Max Glu Serum.
+
+We looked at the Medications are some of the medications has lots of class imbalance. Class Imbalance, is the problem which occurs where total number of positives are less than number of negatives. Those variables are Repaglinide, Nateglinide, Chlorpropamide, Tolbutamide, Acarbose, Miglitol, Tolazamide, Glyburide, Glipizide, Acetohexmide, Troglitazone, Examide, Citoglipton, Metoformin. The above variables were dropped from our dataset.
+
+Diagnosis and Diagnosis Related Group classification. The data set contained around 850 unique diagnosis codes and 500 drg codes. Instead of using these unique values in our modeling, we grouped these diagnosis codes further in to Disease Classification Category. There are only 19 disease classification category so we transformed 850 unique diagnosis codes into 19 disease categories. Next for DRG we mapped unique codes to Diagnosis Categories which were 25 of them. 
+
+After removing most of the variables our final data set contains 30 variables including DRG.
+
+Next we want to see the plot of the variables in our data set.From the plots we can see the following variables are skewed. DRGClassification, Age, Time in Hospital, Number of Medications. To correct for the skewness we will be performing a Log Transformation on these variables during our modeling. 
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+plot_histogram(newdataset) 
+```
+
+
+We also wanted to check the Correlation of predictor variables and between predictor and response variables. From the below plot we see positive correlation between 1. DiabetesMed and MedicationChange, 2.MedicationChange and Insulin, 3. Max_Glu_Serum and Admission_Type, 4. Number of Medication and Time in Hospital. Though we see some negative correlation between variables, they are not so profund. As part of Regression analysis we will perform Variance Inflation Factor to check for MultiCollinearity.
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
 cordata = cor(newdataset)
-corrplot(cordata, method = "circle", type = "upper")
+corrplot(cordata, method = "circle", type = "lower")
 ```
 
 
@@ -237,7 +264,8 @@ corrplot(cordata, method = "circle", type = "upper")
 As a first step in data preprocessing, splitting of training and test data set, is to check the class bias. In our dataset there is class bias in our target variable
 
 Ideally, the proportion of events and non-events in the target variable should approximately be the same. So, lets first check the proportion of classes in the dependent variable readmitted.
-`r knitr::kable(table(newdataset$readmitted ))`
+
+`r table(newdataset$readmitted) %>% kable() %>% kable_styling()`
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
 knitr::kable(table(newdataset$readmitted ))
@@ -261,17 +289,20 @@ table(newdataset$readmitted )
 # Create Training Data
 input_ones <- newdataset[which(newdataset$readmitted == 1), ]  # all 1's
 input_zeros <- newdataset[which(newdataset$readmitted == 0), ]  # all 0's
-set.seed(100)  # for repeatability of samples
+set.seed(100)  
 input_ones_training_rows <- sample(1:nrow(input_ones), 0.7*nrow(input_ones))  # 1's for training
 input_zeros_training_rows <- sample(1:nrow(input_zeros), 0.7*nrow(input_ones))  # 0's for training. Pick as many 0's as 1's
 training_ones <- input_ones[input_ones_training_rows, ]  
 training_zeros <- input_zeros[input_zeros_training_rows, ]
-trainingData <- rbind(training_ones, training_zeros)  # row bind the 1's and 0's 
+trainingData <- rbind(training_ones, training_zeros)  
 
 # Create Test Data
 test_ones <- input_ones[-input_ones_training_rows, ]
 test_zeros <- input_zeros[-input_zeros_training_rows, ]
-testData <- rbind(test_ones, test_zeros)  # row bind the 1's and 0's 
+testData <- rbind(test_ones, test_zeros)  
+# Temp assigned or original data to df
+orgTrain = trainingData 
+orgTest = testData
 
 ####################
 
@@ -297,9 +328,9 @@ predicted <- predict(logitMod, testData, type="response")
 
 Analysis of coefficients of Base Model.
 
-`r knitr::kable(summary(logitMod)$coef)`
+`r summary(logitMod)$coef %>% kable() %>% kable_styling()`
 
-The summary(logitMod) gives the beta coefficients, Standard error, z Value and p Value. As a next step of summary analysis we have to look for variables don’t turn out to be significant in the model (i.e. p Value turns out greater than significance level of 0.05). The following values are considered to be significant in our model as they are (p-Value>0.05). The variables are age, admission_source_id, time_in_hospital, number_emergency, number_inpatient, number_diagnoses, max_glu_serum, A1Cresult, metformin, diabetesMed, primarydiagclass, tertiarydiagclass_1. The above variables becomes the next set of variables for our step wise regression. 
+The summary(logitMod) gives the beta coefficients, Standard error, z Value and p Value. As a next step of summary analysis we have to look for variables don’t turn out to be significant in the model (i.e. p Value turns out greater than significance level of 0.05). The following values are considered to be significant in our model as they are (p-Value<0.05). The variables are age, admission_source_id, time_in_hospital, number_emergency, number_inpatient, number_diagnoses, max_glu_serum, A1Cresult, metformin, diabetesMed, primarydiagclass, tertiarydiagclass_1. The above variables becomes the next set of variables for our step wise regression. 
 
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
@@ -321,7 +352,7 @@ Misclassification error is the percentage mismatch of predcited vs actuals, irre
 From our corrplot analysis we did not find much correlation between our predictor variables and also between predictor variable and target variable. 
 Further as next step in our regression analysis, we want to confirm the same by validating the variance inflation factor.
 We should check for multicollinearity in the model. As seen below, all predictor variables in the model have VIF well below 4.
-`r knitr::kable(car::vif(logitMod))`
+`r car::vif(logitMod) %>% kable() %>% kable_styling()`
 
 #### ROC:
 
@@ -373,7 +404,7 @@ From the plots in our data preparation step, we found some of the variables are 
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
 
-trainingData = 
+LogtrainingData = 
   trainingData %>% 
   mutate(
     log_age = log(age),
@@ -381,9 +412,9 @@ trainingData =
     log_numofMedications = log(num_medications),log_numoflabProcedures = log(num_lab_procedures),
     log_DRGClassification =log(DRGClassification))
 
-trainingData$log_DRGClassification[!is.finite(trainingData$log_DRGClassification)] = 0
+LogtrainingData$log_DRGClassification[!is.finite(LogtrainingData$log_DRGClassification)] = 0
 
-testData = 
+LogtestData = 
   testData %>% 
   mutate(
     log_age = log(age),
@@ -391,14 +422,14 @@ testData =
     log_numofMedications = log(num_medications),log_numoflabProcedures = log(num_lab_procedures),
     log_DRGClassification =log(DRGClassification))
 
-testData$log_DRGClassification[!is.finite(testData$log_DRGClassification)] = 0
+LogtestData$log_DRGClassification[!is.finite(LogtestData$log_DRGClassification)] = 0
 
-logitMod_3 <- glm(readmitted ~ log_age + admission_source_id + log_timeinhospital + number_emergency + number_inpatient + number_diagnoses + max_glu_serum + A1Cresult + metformin + diabetesMed + primarydiagclass + tertiarydiagclass_1 + log_DRGClassification + log_numofMedications + log_numoflabProcedures, data=trainingData, family=binomial(link="logit"))
+logitMod_3 <- glm(readmitted ~ log_age + admission_source_id + log_timeinhospital + number_emergency + number_inpatient + number_diagnoses + max_glu_serum + A1Cresult + metformin + diabetesMed + primarydiagclass + tertiarydiagclass_1 + log_DRGClassification + log_numofMedications + log_numoflabProcedures, data=LogtrainingData, family=binomial(link="logit"))
 
 summary(logitMod_3)
-predicted_3 <- predict(logitMod_3, testData, type="response")  
+predicted_3 <- predict(logitMod_3, LogtestData, type="response")  
 
-plotROC(testData$readmitted, predicted_3)
+plotROC(LogtestData$readmitted, predicted_3)
 
 predicted_3 = ifelse(predicted_3 > 0.5, 1, 0)
 
@@ -449,21 +480,262 @@ TotalConMatrix = rbind(caretPred1, caretPred2, caretPred3)
 ```
 
 Comparing the accuracy of the three logistic regression accuracy, the model without DRG had a better accuracy compared to the one with DRG by a smaller margin. So we can conclude that the DRG is not an huge factor in hospital readmission rate for diabetic mellitius patients. Having said that including DRG in the model does not decreases the accuracy by greater margin. So it is more of an neutral effect. Below is the accuracy chart of three models.
-`r knitr::kable(TotalConMatrix)`
+`r TotalConMatrix %>% kable() %>% kable_styling()`
 
 
 ### Ensemble Methods Modelling: 
 
 ####Decision Tree:
 
-####Random Forrest:
+The machine learning behind this method is to figure out which variable and which threshold to use at every split. One advantage of tree-based methods is that they have no assumptions about the structure of the data and are able to pick up non-linear effects if given sufficient tree depth. We can fit decision trees using our cleaned-up data that has 30 predictor variables. 
+
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+
+TreeTrainData = orgTrain
+TreeTestData = orgTest
+
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+dtree_fit <- train(readmitted ~., data = TreeTrainData, method = "rpart",
+                   parms = list(split = "information"),
+                   trControl=trctrl,
+                   tuneLength = 10)
+#prp(dtree_fit$finalModel, box.palette = "Reds", tweak = 1.2)
+#pred.nn <- predict(dtree_fit, TreeTestData,type= "raw")
+#table_mat <- table(TreeTestData$readmitted,pred.nn)
+#table_mat
+#caret::confusionMatrix(factor(pred.nn), factor(TreeTestData$readmitted) )  #check accuracy
+########################
+# Classification Tree with rpart
+require(rpart)
+# grow tree 
+fit <- rpart(readmitted ~.,
+   method="class", data=TreeTrainData)
+pred.nn <- predict(fit, TreeTestData,type = 'class')
+table_mat <- table(TreeTestData$readmitted,pred.nn)
+table_mat
+#pred.nn
+preddrg = caret::confusionMatrix(factor(pred.nn), factor(TreeTestData$readmitted) )
+#printcp(fit) # display the results 
+#plotcp(fit) # visualize cross-validation results 
+# # detailed summary of splits
+summary(fit)
+
+############################ Decision Tree with No DRG ############
+trainingdata_ndrg=TreeTrainData[, -30]
+testdata_ndrg = TreeTestData[,-30]
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+#set.seed(3333)
+dtree_fit_ndrg <- train(readmitted ~., data = trainingdata_ndrg, method = "rpart",
+                   parms = list(split = "information"),
+                   trControl=trctrl,
+                   tuneLength = 10)
+dtree_fit_ndrg
+#prp(dtree_fit_ndrg$finalModel, box.palette = "Reds", tweak = 1.2)
+pred.nn <- predict(dtree_fit_ndrg, testData,type= "raw")
+#table_mat <- table(testData$readmitted,pred.nn)
+#table_mat
+mean(pred.nn==testData$readmitted) 
+confusionMatrix(pred.nn, testData$readmitted )  
+
+fit <- rpart(readmitted ~.,
+   method="class", data=trainingdata_ndrg)
+pred.nn <- predict(fit, testdata_ndrg,type = 'class')
+table_mat <- table(testdata_ndrg$readmitted,pred.nn)
+table_mat
+#pred.nn
+prednodrg = caret::confusionMatrix(factor(pred.nn), factor(testdata_ndrg$readmitted) )
+#prednodrg
+summary(fit)
+preddrg$overall[['Accuracy']]
+###########################Tree classifier with criterion as gini index#################
+
+#set.seed(3333)
+#dtree_fit_gini <- train(readmitted ~., data = trainingData, method = "rpart",
+                   #parms = list(split = "gini"),
+                   ##trControl=trctrl,
+                   #tuneLength = 10)
+#dtree_fit_gini
+#prp(dtree_fit_gini$finalModel, box.palette = "Blues", tweak = 1.2)
+
+```
+
+
+For analysis on decision tree, we ran the model with DRG as a parameter and another model without DRG as parameter. The accuracy of the model with DRG and with out DRG did not make big difference. `r preddrg$overall[['Accuracy']]`
+
+Comparing the Variable importance for both the model with DRG and with out DRG, the DRGClassifier was of one of the importance parameter. 
+
+The Variables of importance in creating the tree are number_inpatient, service_utilization, number_emergency, number_outpatient and DRGClassification. Decision Tree model did not have much effect based on the gini index criterion with and without the “DRGClassification” variable.
+
+
+
+####Random Forest:
+
+Before getting in depth about Random Forest, one of the most common issue with Decision Tree model is overfitting. Overfitting is a statistical modeling error that contains more parameters than can be justified by the data. In other words, the essence of overfitting is to have extracted some of the residual variation (i.e. the noise) as if that variation represented underlying model structure. In order to over come the problem of Overfitting, we use go for Random Forest. A random forest allows us to determine the most important predictors across the explanatory variables by generating many decision trees and then ranking the variables by importance.
+
+We are going to use the randomforest package to perform our modeling. We are going to do the modeling on the base data set and  see whether DRG is one of the important variable in the bagging process. In other words, we are using Random Forest to find what are the importance variables for effective prediction. We are running our model with 100 trees. Summary of the model can be seen below. 
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+#######################Random Forest#################
+randtrainingData = trainingData
+randtestData = testData
+
+randtrainingData$readmitted <- ifelse(randtrainingData$readmitted == 1, "TRUE", "FALSE")
+randtestData$readmitted <- ifelse(randtestData$readmitted == 1, "TRUE", "FALSE")
+# Converting the target variables as factors
+randtrainingData$readmitted <- as.factor(trainingData$readmitted)
+randtestData$readmitted <- as.factor(testData$readmitted)
+
+model.rf <- randomForest(readmitted~., data=randtrainingData, ntree=100, mtry = 8, na.action=na.exclude, importance=T,proximity=T)
+pred.rf <- predict(model.rf, randtestData)
+rpred = mean(pred.rf==randtestData$readmitted) 
+
+```
+
+```{r}
+#Summary of the model
+print(model.rf)
+
+```
+
+From the summary we can see that the Classification is the type of forest and Number of trees used in the model in 50 as defined. The no of variables tried at the split is 8. Below we could see the split as part of tree visualization. 
+Random forests technique involves sampling of the input data with replacement (bootstrap sampling). In this sampling, about one thrird of the data is not used for training and can be used to testing.These are called the out of bag samples. Next aspect in the summary output is Confustion Matrix. From the MisClassification error percentage we can see that the model incorrectly predicts no readmit 40% of time and incorrectly predicts yes readmit 43% of time. With the overall accuracy of the model at `r mean(pred.rf==randtestData$readmitted)`.
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+# Explanation of Plots
+plot(model.rf)
+
+```
+
+`r plot(model.rf)`
+
+The plot above helps you decide how many trees to have in your model. On the y-axis is the error of the model and the x-axis is the number of trees used. From the Error plot, we can see after 40 trees the error almost flattens out to zero. So anything above 40 trees of course become a point where each additional tree only adds further time and computational power, but does not improve overall model performance.
+
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+
+#Plotting of Decision Tree
+#library("party")
+x <- ctree(randtrainingData$readmitted ~ ., data=randtrainingData)
+plot(x, type="simple")
+#Variable Importance of the model
+varImpPlot(model.rf,scale=TRUE,n.var=12)
+
+```
+
+`r plot(x, type="simple")`
+
+`r varImpPlot(model.rf,scale=TRUE,n.var=12)`
+
+From the decision tree and the Importance variable plot we can see that DRG Classifier is on the top 6 variables which determines out model predicition. In the Mean Decrease Gini index DRG Classifier is at the top 10 values. This clearly shows DRG is a very important factor in the hospital readmission. Though other paratemers like Discharge, Diagnosis codes plays a more important role, DRG cannot be discounted.
 
 ####Neural Network:
 
+Neural networks are built from units called perceptrons (ptrons). Ptrons have one or more inputs, an activation function and an output. 
+An ANN model is built up by combining ptrons in structured layers. The ptrons in a given layer are independent of each other, but the each connect to all the ptrons in the next layer.
+
+The input layer contains a ptron for each predictor variable. One or more hidden layers contain a user defined number of ptrons. Each ptron in the first hidden layer receives an input from the each ptron in the input layer. The output layer contains a ptron for each response variable. Each output ptron receives one input from each ptron in the hidden layer. The ptrons have a nonlinear activation function (e.g a logistic function) which determines their output value based upon the values of their inputs.The connections between ptrons are weighted. The magnitude of the weight controls the strength of the influence of that input on the receiving ptron. The sign of the weight controls whether the influence is stimulating or inhibiting the signal to the next layer. 
+
+
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+
+nntrainingData = trainingData
+nntestData = testData
+
+model_nn <- nnet(readmitted ~ ., data=nntrainingData, size=3,act.fct = "logistic",linear.output = FALSE, maxit=1000)
+pred_nn <- predict(model_nn, nntestData,type= "raw")
+pred_nn <- ifelse(pred_nn > 0.5, "TRUE", "FALSE")
+nntestData$readmitted <- ifelse(nntestData$readmitted == 1, "TRUE", "FALSE")
+npred = mean(pred_nn==nntestData$readmitted) 
+npred
+
+```
+In our analysis we are going to check the accuracy of our prediction and variables which are important for our prediction. Below we the accuracy of our model is `r mean(pred_nn==nntestData$readmitted) `. 
+
+Below we the neural network plot with 3 hidden layer.
+`r plotnet(model_nn)`
+
+
+
+Also the plot for variable importance based on weights. From the plots we can see that DRG Classification which lies in the top 6 on positive side of the spectrum, does have an impact on the model prediction, not as the Medication, Age, Diagnosis has more of positive impact on the prediction of model.
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+plotnet(model_nn)# 
+```
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+olden(model_nn)
+
+```
+
+
 ####XGBoost:
+XG Boost Algorithm: XGBoost is a library designed and optimized for boosting trees algorithms. Gradient boosting trees model is originally proposed by Friedman et al. The underlying algorithm of XGBoost is similar to the classic gbm algorithm. By employing multi-threads and imposing regularization, XGBoost is able to use more computational power and get more accurate prediction. 
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+############################XG Boost################
+
+
+
+labels <- orgTrain$readmitted 
+ts_label <- orgTest$readmitted
+
+
+
+noretrainingData = orgTrain %>%
+                  select(-c("readmitted"))  
+noretestData = orgTest %>%
+                  select(-c("readmitted"))  
+
+new_tr = as.matrix(sapply(noretrainingData, as.numeric))
+new_ts <- as.matrix(sapply(noretestData, as.numeric))
+
+dtrain <- xgb.DMatrix(data = new_tr,label = labels) 
+dtest <- xgb.DMatrix(data = new_ts,label=ts_label)
+
+params <- list(booster = "gbtree", objective = "binary:logistic", eta=0.3, gamma=0, max_depth=6, min_child_weight=1, subsample=1, colsample_bytree=1)
+
+xgbcv <- xgb.cv( params = params, data = dtrain, nrounds = 100, nfold = 5, showsd = T, stratified = T, print_every_n = 10, early_stopping_rounds = 50, maximize = F)
+xgbcv
+
+
+xgb1 <- xgb.train (params = params, data = dtrain, nrounds = 50, watchlist = list(val=dtest,train=dtrain), print_every_n = 10, early_stopping_rounds = 10, maximize = F , eval_metric = "error")
+
+
+
+xgbpred <- predict (xgb1,dtest)
+xgbpred <- ifelse (xgbpred > 0.5,1,0)
+
+xgCM = caret::confusionMatrix(factor(xgbpred),factor(ts_label))
+# Accuracy 60.65. Almost identical to random forest
+xgCM$overall[['Accuracy']]
+mat <- xgb.importance (feature_names = colnames(new_tr),model = xgb1)
+xgb.plot.importance (importance_matrix = mat[1:20]) 
+############################
+
+```
+
+
+We used the package XGBoost to go about with the model and prediction. The first step in XGBoost model is that it accepts only numeric variables, so a part of preprocessing we converted our factors to numeric value. We use One hot encoding process to convert the categorical to numeric. Next the model has own way of accept the train and test data sets. The train and test data set needs to in Matrix format. The Dmatrix format is used to convert the train and test data set. The next step in the process is cross validation. It is used to calculate the best nround for this model. The lowest error was achieved  at 6th iteration. Which we felt it to be much lower, so we did the trained the model at 50 iterations. The CV error minimum value is 0.34 with a CV accuracy of 66%. We will have to check out test set accuracy and determine if this makes sense. The objective function binary:logistic returns output probabilities rather than labels. To convert it, we need to manually use a cutoff value. We have  used 0.5 as my cutoff value for predictions. 
+
+Accuracy of XGBoost Model is `r xgCM$overall[['Accuracy']]` and the Variable Importance Plot is visualized. From the plot it is clear that the DRG classifier is at the top 6 important variable in our prediction model. So we can conclude that the DRG plays a significant role in the prediction of hospital readmission.
 
 
 ### Conclusion and Next Steps:
+
+####Accuracy Comparison of Models
+
+```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
+
+FinalAccuarcyDH = data.frame(Model = c('Binary Log DRG','Binary Log No-DRG', 'Binary Log Trans Var','Decision Tree','Random Forest','Neural Network','XG Boost'),
+                             Accuracy = c(pred1$overall[['Accuracy']]*100,pred2$overall[['Accuracy']]*100,pred3$overall[['Accuracy']]*100,preddrg$overall[['Accuracy']]*100,rpred*100,npred*100,xgCM$overall[['Accuracy']]*100))
+
+
+
+```
+
+`r FinalAccuarcyDH %>% kable() %>% kable_styling()`
 
 
 
