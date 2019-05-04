@@ -4,6 +4,7 @@ author: "Ali Harb, Dilip Ganesan and Raghunathan Ramnath"
 date: "4/19/2019"
 output:
   pdf_document: default
+  word_document: default
   html_document:
     df_print: paged
 ---
@@ -77,7 +78,7 @@ While starting this research we strongly believe race and sex as the most import
 
 #####Payment Methodologies:  
 
-Though many studies have been done on hospital readmission, the parameters that were used are more clinical or patient centric. Though research were made on the dollar impact because of readmission, very less analysis was done on the parameter of how hospitals were reimbursed. This brought us to the important parameter of DRG (Diagnosis Related Group). Hospital admissions are reimbursed based on DRG. [Joseph Futoma et.al] did the comparison of hospital readmission models based on DRG cohorts. For each visit they have a single Diagnosis Related Group (DRG) code, selected from a set of 815 unique DRGs which break down admissions into broader diagnoses classes than the highly specific ICD codes. They tested a variety of statistical models on 280 different patient-visit cohorts as determined by the DRGs. In the context of regression, this is equivalent to the inclusion of an interaction effect between disease groups and every predictor. According to [M W Rich et. al] there is more financial advantage to hospitals to code patients into more lucrative DRGs, so that patients with more severe disease could conceivably be “promoted” to higher paying DRGs, so the reimbursement increases. From the above research, we feel DRG could be one of the crucial parameter for readmission prediction. Though we do not have the parameter in our dataset, we have got the DRG for the clinical claims data from web scraping. 
+Though many studies have been done on hospital readmission, the parameters that were used are more clinical or patient centric. Though research were made on the dollar impact because of readmission, very less analysis was done on the parameter of how hospitals were reimbursed. This brought us to the important parameter of DRG (Diagnosis Related Group). Hospital admissions are reimbursed based on DRG. [Joseph Futoma et.al] did the comparison of hospital readmission models based on DRG cohorts. For each visit, they have a single Diagnosis Related Group (DRG) code, selected from a set of 815 unique DRGs which break down admissions into broader diagnoses classes than the highly specific ICD codes. They tested a variety of statistical models on 280 different patient-visit cohorts as determined by the DRGs. In the context of regression, this is equivalent to the inclusion of an interaction effect between disease groups and every predictor. According to [M W Rich et. al] there is more financial advantage to hospitals to code patients into more lucrative DRGs, so that patients with more severe disease could conceivably be “promoted” to higher paying DRGs, so the reimbursement increases. From the above research, we feel DRG could be one of the crucial parameter for readmission prediction. Though we do not have the parameter in our dataset, we have got the DRG for the clinical claims data from web scraping. 
 
 #####Medical Condition and Medications: 
 
@@ -100,21 +101,21 @@ Along with the clinical claims data set that is available in UCI, we will also b
 The most challenging aspect of data collection is getting the DRG data for this dataset. For extraction of DRG data we went with two approaches. 
 
 1. The first approach was to use the CMS crosswalk dataset which is more of an approximate DRG value. 
-2. The next approach is to send the clincial data with requisite parameter and extract the accurate DRG.
+2. The next approach is to send the clinical data with requisite parameter and extract the accurate DRG.
 
 Below you can find a pictorial representation of the process that we have used for data extraction.
 
 
-We started with the Step 2, the more challenging aspect of data extraction. Normally payer industries use to extract DRG by getting licensed software from different vendors. 3M DRG software is the industry wide solution for getting the DRG. Since using these software costs a lot, we did not want to follow that path. We digged through some research and finally settled on extracting DRG using online Find A Code website.
+We started with the Step 2, the more challenging aspect of data extraction. Normally payer industries use to extract DRG by getting licensed software from different vendors. 3M DRG software is the industry wide solution for getting the DRG. Since using these software costs a lot, we did not want to follow that path. We dig through some research and finally settled on extracting DRG using online Find A Code website.
 
 Find A Code website give DRG when we can send the clinical data online. Some of the clinical data that they require are diagnosis code, patient sex and age. The next problem we stumbled upon is we have 100K rows of record manually 
-submitting the records to the website to extract the DRG was not a feasible task. So we went in to the route of automated extraction of data set. For this automation we relied on Selenium/Python(beautifulsoup) to extract the DRG data.
+submitting the records to the website to extract the DRG was not a feasible task. So, we went in to the route of automated extraction of data set. For this automation, we relied on Selenium/Python(BeautifulSoup) to extract the DRG data.
 
 Selenium is open source automation tool, which helps in submitting the requisite data to a website. We wrote a python code, which will get the input data from xl and go the Find A Code Website and key in the required data in the screen 
 text fields. Once the input data are populated in to those required fields in screen, it automatically goes and click the button get DRG. Once the button is hit on the screen, then the request is send to the server and the Find A Code
-website does the neccessary algorithm to extract the DRG and displays the same in the screen.
+website does the necessary algorithm to extract the DRG and displays the same in the screen.
 
-Once the DRG is displayed then we used Python(beautifulsoup) package to go the required field and extract the DRG for that particular input request. Once the DRG was extracted the we wrote the DRG along with the payment for DRG into a output XL file. This process was done in iteration for the entire data set and 100K rows in the data set was filled with DRG and the payment information. 
+Once the DRG is displayed then we used Python(beautifulsoup) package to go the required field and extract the DRG for that input request. Once the DRG was extracted the we wrote the DRG along with the payment for DRG into an output XL file. This process was done in iteration for the entire data set and 100K rows in the data set was filled with DRG and the payment information. 
 
 This novel approach not only saved time but also played an important role in the extraction of DRG and in the creation of consolidated data set that is required for this thesis.
 
@@ -145,13 +146,13 @@ Results of all models were then compared to see which of these models could bett
 
 The diabetes dataset we have used consists of 10,000 records and 56 features. Below given is the detailed description of some of the important features in the dataset.
 
-1. Encounter ID: Continous running number. Provides a unique identifier for each claim record. No NAs
+1. Encounter ID: Continuous running number. Provides a unique identifier for each claim record. No NAs
 
 2. Race: Categorical values. Values: African-American, Asian, Caucasian, Hispanic, Other. NAs 2.21%
 
-3. Gender: Categorical values. Values: Male, Female, Unkown. No NAs
+3. Gender: Categorical values. Values: Male, Female, Unknown. No NAs
 
-4. Age: Categorical values. Values: Instead of giving unique age ranges becuase of PHI viloation, we have age ranges. [0-10), [10-20), [20-30), [30-40), [40-50), [50-60), [60-70), [70-80), [80-90), [90-100). No NAs
+4. Age: Categorical values. Values: Instead of giving unique age ranges because of PHI violation we have age ranges. [0-10), [10-20), [20-30), [30-40), [40-50), [50-60), [60-70), [70-80), [80-90), [90-100). No NAs
 
 5. Weight: Numerical values. Values: Weight of a patient. NAs 95.92%. We need to see whether we are going to use in our Model.
 
@@ -195,7 +196,7 @@ The diabetes dataset we have used consists of 10,000 records and 56 features. Be
 
 	Metformin, Repaglinide, Nateglinide, Chlorpropamide, Glimepiride, Acetohexamide, Glipizide, Glyburide, Tolbutamide, Pioglitazone, Rosiglitazone, Acarbose, Miglitol, Troglitazone, Tolazamide, 
 	Examide, Citoglipton, Insulin, Glyburide metformin, Glipizide metformin, Glimepiride pioglitazone, Metformin rosiglitazone, Metformin pioglitazone. 
-	Values: Down (if the dosage is reduce ), No (if the medicine is not given), Steady (if the dosage is steady), Up (if the dosage is increased). No NAs
+	Values: Down (if the dosage is reduced), No (if the medicine is not given), Steady (if the dosage is steady), Up (if the dosage is increased). No NAs
 
 25. Change: Categorical values. Values: Ch (if change in medicine), No (if no change in medicine). No NAs
 
@@ -227,31 +228,31 @@ newdataset = dataset %>%
 
 The data set contains total of 54 variables. We investigated each variable did data transformation and picked the variables which are best suited for our modeling. We will look at the variables which were dropped, why we dropped them and variables which went through transformation.
 
-The following variables were dropped. Encounter ID, Patient_Nbr. The two variables were dropped because they are running numbers and does not add any value to our model. As a next step we looked for variables with missing rows. There were few variables which were almost 90% empty. So we decided to drop those variables. These variables are Weight, Payer Code and Specialty.  
+The following variables were dropped. Encounter ID, Patient_Nbr. The two variables were dropped because they are running numbers and does not add any value to our model. As a next step, we looked for variables with missing rows. There were few variables which were almost 90% empty. So, we decided to drop those variables. These variables are Weight, Payer Code and Specialty.  
 
-Next we inspected variable Gender There were three factors with respect to gender, When looked at the data only 3 rows has factor level apart from Male and Female. We dropped those 3 rows, it will not affect our model dropping those 3 rows. Other variable with patient population which is important is Race. We collapsed race in to following categories (1- Other, 2 - African American, 3 - Asian, 4- Caucasian, 5 - Hispanic). The other variable Age which was in a set of range of values, instead of age range we took average of age range and used the average to replace the age range.
+Next, we inspected variable Gender There were three factors with respect to gender, when looked at the data only 3 rows have factor level apart from Male and Female. We dropped those 3 rows, it will not affect our model dropping those 3 rows. Other variable with patient population which is important is Race. We collapsed race in to following categories (1- Other, 2 - African American, 3 - Asian, 4- Caucasian, 5 - Hispanic). The other variable Age which was in a set of ranges of values, instead of age range we took average of age range and used the average to replace the age range.
 
-From data prespective, we looked at unique Discharge values in data set. There were four data values which were related to Death of patient in the hospital. Since a person dying in hospital has no chance of getting re admitted, we dropped those rows. On analysis of medications, we figured Examide and Citoglipton was not administered to the entire patient population. So it is of no use to add these two in our analysis and it was decided to drop. 
+From data perspective, we looked at unique Discharge values in data set. There were four data values which were related to Death of patient in the hospital. Since a person dying in hospital has no chance of getting re admitted, we dropped those rows. On analysis of medications, we figured Examide and Citoglipton was not administered to the entire patient population. So, it is of no use to add these two in our analysis and it was decided to drop. 
 
 Some data rows were collapsed based on what makes clinical significance in the data set. Admit Source will be collapsed from 11 values to 5 values. 
-The rows with only the following values were picked for dataset(Namely 1- Referral, 7- Emergency, 4 - Transfer, 11 - Delivery, 20 - Not Mapped). Same analysis was done for Discharge status, discharge dtatus has 30 values, we will collapse them to 7 (1 - Discharged, 2 - Transfer, 7- left AMA,14-Hospice, 9-Admitted, 25 Not Mapped, 12 - Still a patient). Admit Type was collapsed to only 4 values (1- Emergency, 3 - Elective, 4 - New Born, 5 - Not Mapped). 
+The rows with only the following values were picked for dataset(Namely 1- Referral, 7- Emergency, 4 - Transfer, 11 - Delivery, 20 - Not Mapped). Same analysis was done for Discharge status, discharge status has 30 values, we will collapse them to 7 (1 - Discharged, 2 - Transfer, 7- left AMA,14-Hospice, 9-Admitted, 25 Not Mapped, 12 - Still a patient). Admit Type was collapsed to only 4 values (1- Emergency, 3 - Elective, 4 - New Born, 5 - Not Mapped). 
 
 Some of the variables were in we changed from Yes/No to 1/0. Those variables are Readmitted, Change of Medication, Diabetes Medication, Hb1AC Test Result, Max Glu Serum.
 
 We looked at the Medications are some of the medications has lots of class imbalance. Class Imbalance, is the problem which occurs where total number of positives are less than number of negatives. Those variables are Repaglinide, Nateglinide, Chlorpropamide, Tolbutamide, Acarbose, Miglitol, Tolazamide, Glyburide, Glipizide, Acetohexmide, Troglitazone, Examide, Citoglipton, Metoformin. The above variables were dropped from our dataset.
 
-Diagnosis and Diagnosis Related Group classification. The data set contained around 850 unique diagnosis codes and 500 drg codes. Instead of using these unique values in our modeling, we grouped these diagnosis codes further in to Disease Classification Category. There are only 19 disease classification category so we transformed 850 unique diagnosis codes into 19 disease categories. Next for DRG we mapped unique codes to Diagnosis Categories which were 25 of them. 
+Diagnosis and Diagnosis Related Group classification. The data set contained around 850 unique diagnosis codes and 500 drg codes. Instead of using these unique values in our modeling, we grouped these diagnosis codes further in to Disease Classification Category. There are only 19 disease classification categories so we transformed 850 unique diagnosis codes into 19 disease categories. Next for DRG we mapped unique codes to Diagnosis Categories which were 25 of them. 
 
 After removing most of the variables our final data set contains 30 variables including DRG.
 
-Next we want to see the plot of the variables in our data set.From the plots we can see the following variables are skewed. DRGClassification, Age, Time in Hospital, Number of Medications. To correct for the skewness we will be performing a Log Transformation on these variables during our modeling. 
+Next, we want to see the plot of the variables in our data set. From the plots we can see the following variables are skewed. DRGClassification, Age, Time in Hospital, Number of Medications. To correct for the skewness, we will be performing a Log Transformation on these variables during our modeling. 
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
 plot_histogram(newdataset) 
 ```
 
 
-We also wanted to check the Correlation of predictor variables and between predictor and response variables. From the below plot we see positive correlation between 1. DiabetesMed and MedicationChange, 2.MedicationChange and Insulin, 3. Max_Glu_Serum and Admission_Type, 4. Number of Medication and Time in Hospital. Though we see some negative correlation between variables, they are not so profund. As part of Regression analysis we will perform Variance Inflation Factor to check for MultiCollinearity.
+We also wanted to check the Correlation of predictor variables and between predictor and response variables. From the below plot we see positive correlation between 1. DiabetesMed and MedicationChange, 2.MedicationChange and Insulin, 3. Max_Glu_Serum and Admission_Type, 4. Number of Medication and Time in Hospital. Though we see some negative correlation between variables, they are not so profound. As part of Regression analysis, we will perform Variance Inflation Factor to check for Multicollinearity.
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
 cordata = cor(newdataset)
@@ -261,7 +262,7 @@ corrplot(cordata, method = "circle", type = "lower")
 
 ####Training and Test Data for Logistic Regression:
 
-As a first step in data preprocessing, splitting of training and test data set, is to check the class bias. In our dataset there is class bias in our target variable
+As a first step in data preprocessing, splitting of training and test data set, is to check the class bias. In our dataset, there is class bias in our target variable
 
 Ideally, the proportion of events and non-events in the target variable should approximately be the same. So, lets first check the proportion of classes in the dependent variable readmitted.
 
@@ -275,11 +276,11 @@ knitr::kable(table(newdataset$readmitted ))
 ```
 
 Clearly, there is a class bias, a condition observed when the proportion of events is much smaller than proportion of non-events. 
-So we must sample the observations in approximately equal proportions to get better models.
+So, we must sample the observations in approximately equal proportions to get better models.
 
-As a next step we are going through the process to remove class bias.
+As a next step, we are going through the process to remove class bias.
 
-One way to address the problem of class bias is to draw the 0s and 1s for the trainingData in equal proportions. In doing so, we will put rest of the inputData not included for training into testData. 
+One way to address the problem of class bias is to draw the 0s and 1s for the trainingData in equal proportions. In doing so, we will put rest of the input Data not included for training into testData. 
 As a result, the size of trainingData sample will be smaller that validation. This is better than having the model go wrong.
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
@@ -330,7 +331,7 @@ Analysis of coefficients of Base Model.
 
 `r summary(logitMod)$coef %>% kable() %>% kable_styling()`
 
-The summary(logitMod) gives the beta coefficients, Standard error, z Value and p Value. As a next step of summary analysis we have to look for variables don’t turn out to be significant in the model (i.e. p Value turns out greater than significance level of 0.05). The following values are considered to be significant in our model as they are (p-Value<0.05). The variables are age, admission_source_id, time_in_hospital, number_emergency, number_inpatient, number_diagnoses, max_glu_serum, A1Cresult, metformin, diabetesMed, primarydiagclass, tertiarydiagclass_1. The above variables becomes the next set of variables for our step wise regression. 
+The summary(logitMod) gives the beta coefficients, Standard error, z Value and p Value. As a next step of summary analysis we have to look for variables don’t turn out to be significant in the model (i.e. p Value turns out greater than significance level of 0.05). The following values are considered to be significant in our model as they are (p-Value<0.05). The variables are age, admission_source_id, time_in_hospital, number_emergency, number_inpatient, number_diagnoses, max_glu_serum, A1Cresult, metformin, diabetesMed, primarydiagclass, tertiarydiagclass_1. The above variables become the next set of variables for our step wise regression. 
 
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
@@ -345,11 +346,11 @@ The default cutoff prediction probability score is 0.5 or the ratio of 1’s and
 
 ##### MisClassification Error:
 
-Misclassification error is the percentage mismatch of predcited vs actuals, irrespective of 1’s or 0’s. The lower the misclassification error, the better is our model. The value for our model is `r misClassError(testData$readmitted, predicted, threshold = optCutOff)`
+Misclassification error is the percentage mismatch of predicted vs actuals, irrespective of 1’s or 0’s. The lower the misclassification error, the better is our model. The value for our model is `r misClassError(testData$readmitted, predicted, threshold = optCutOff)`
 
 #### VIF:
 
-From our corrplot analysis we did not find much correlation between our predictor variables and also between predictor variable and target variable. 
+From our corrplot analysis we did not find much correlation between our predictor variables and between predictor variable and target variable. 
 Further as next step in our regression analysis, we want to confirm the same by validating the variance inflation factor.
 We should check for multicollinearity in the model. As seen below, all predictor variables in the model have VIF well below 4.
 `r car::vif(logitMod) %>% kable() %>% kable_styling()`
@@ -370,13 +371,13 @@ pred1 = caret::confusionMatrix(factor(testData$readmitted), factor(predicted))
 pred1$overall[['Accuracy']]
 ```
 
-From the confusion Matrix analysis, we come to the conclusion that our model Accuracy is `r pred1$overall[['Accuracy']]*100`%. We are able to predict with `r pred1$overall[['Accuracy']]*100`% accuracy that with DRG as a predictor variable the diabetic mellitus patient will get readmitted. 
-When you look at the Sensitivity of our model it is pretty good. Sensitivity (or True Positive Rate) is the percentage of 1’s (actuals) correctly predicted by the model. Which is what we are looking for in our readmission analysis.
+From the confusion Matrix analysis, we concluded that our model Accuracy is `r pred1$overall[['Accuracy']]*100`%. We can predict with `r pred1$overall[['Accuracy']]*100`% accuracy that with DRG as a predictor variable the diabetic mellitus patient will get readmitted. 
+When you look at the Sensitivity of our model it is good. Sensitivity (or True Positive Rate) is the percentage of 1’s (actuals) correctly predicted by the model. Which is what we are looking for in our readmission analysis.
 
 
 #### Binary Regression Base With Reduced Predictors:
 
-From our first model we are going to drop those predictor variables which we find in statistically less signficant based on p-value(>0.05). With that analysis the list of variables which will be used for this model are.
+From our first model we are going to drop those predictor variables which we find in statistically less significant based on p-value(>0.05). With that analysis the list of variables which will be used for this model are.
 age, admission_source_id, time_in_hospital, number_emergency, number_inpatient, number_diagnoses, max_glu_serum, A1Cresult, metformin, diabetesMed, primarydiagclass, tertiarydiagclass_1
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
@@ -395,11 +396,11 @@ pred2= caret::confusionMatrix(factor(testData$readmitted), factor(predicted_2))
 pred2$overall[['Accuracy']]
 ```
 
-From our reduced predictor variable regression model, the Accuracy of our model has gone up, though not by a greater percent, but to some degree to a value of `r pred2$overall[['Accuracy']]*100`% . This shows that DRGClassification acts a negative parameter from logistic regression modelling prespective. We would like to see how the other logistic regression and ensemble models before drawing conclusions.
+From our reduced predictor variable regression model, the Accuracy of our model has gone up, though not by a greater percent, but to some degree to a value of `r pred2$overall[['Accuracy']]*100`% . This shows that DRGClassification acts a negative parameter from logistic regression modelling perspective. We would like to see how the other logistic regression and ensemble models before drawing conclusions.
 
 #### Binary Regression Base With Log transformation:
 
-From the plots in our data preparation step, we found some of the variables are skewed either to the left or right. Out of those parameters, the parameters which are important to us as part of our Literature review are Age, Time_In_Hospital and DRGClassification. So in our base model we want to do a log transformation on these parameters and see whether the accuracy our model increases.
+From the plots in our data preparation step, we found some of the variables are skewed either to the left or right. Out of those parameters, the parameters which are important to us as part of our Literature review are Age, Time_In_Hospital and DRGClassification. So, in our base model we want to do a log transformation on these parameters and see whether the accuracy our model increases.
 
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
@@ -479,15 +480,15 @@ TotalConMatrix = rbind(caretPred1, caretPred2, caretPred3)
 
 ```
 
-Comparing the accuracy of the three logistic regression accuracy, the model without DRG had a better accuracy compared to the one with DRG by a smaller margin. So we can conclude that the DRG is not an huge factor in hospital readmission rate for diabetic mellitius patients. Having said that including DRG in the model does not decreases the accuracy by greater margin. So it is more of an neutral effect. Below is the accuracy chart of three models.
+Comparing the accuracy of the three logistic regression accuracy, the model without DRG had a better accuracy compared to the one with DRG by a smaller margin. So we can conclude that the DRG is not a huge factor in hospital readmission rate for diabetic mellitus patients. Having said that including DRG in the model does not decreases the accuracy by greater margin. So, it is more of a neutral effect. Below is the accuracy chart of three models.
 `r TotalConMatrix %>% kable() %>% kable_styling()`
 
 
-### Ensemble Methods Modelling: 
+### Ensemble Method and Other Modelling: 
 
 ####Decision Tree:
 
-The machine learning behind this method is to figure out which variable and which threshold to use at every split. One advantage of tree-based methods is that they have no assumptions about the structure of the data and are able to pick up non-linear effects if given sufficient tree depth. We can fit decision trees using our cleaned-up data that has 30 predictor variables. 
+The machine learning behind this method is to figure out which variable and which threshold to use at every split. One advantage of tree-based methods is that they have no assumptions about the structure of the data and can pick up non-linear effects if given sufficient tree depth. We can fit decision trees using our cleaned-up data that has 30 predictor variables. 
 
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
@@ -562,17 +563,17 @@ preddrg$overall[['Accuracy']]
 ```
 
 
-For analysis on decision tree, we ran the model with DRG as a parameter and another model without DRG as parameter. The accuracy of the model with DRG and with out DRG did not make big difference. `r preddrg$overall[['Accuracy']]`
+For analysis on decision tree, we ran the model with DRG as a parameter and another model without DRG as parameter. The accuracy of the model with DRG and without DRG did not make big difference. `r preddrg$overall[['Accuracy']]`
 
-Comparing the Variable importance for both the model with DRG and with out DRG, the DRGClassifier was of one of the importance parameter. 
+Comparing the Variable importance for both the model with DRG and without DRG, the DRGClassifier was of one of the importance parameter. 
 
-The Variables of importance in creating the tree are number_inpatient, service_utilization, number_emergency, number_outpatient and DRGClassification. Decision Tree model did not have much effect based on the gini index criterion with and without the “DRGClassification” variable.
+The Variables of importance in creating the tree are number_inpatient, number_emergency, number_outpatient and DRGClassification. Decision Tree model did not have much effect based on the gini index criterion with and without the “DRGClassification” variable.
 
 
 
 ####Random Forest:
 
-Before getting in depth about Random Forest, one of the most common issue with Decision Tree model is overfitting. Overfitting is a statistical modeling error that contains more parameters than can be justified by the data. In other words, the essence of overfitting is to have extracted some of the residual variation (i.e. the noise) as if that variation represented underlying model structure. In order to over come the problem of Overfitting, we use go for Random Forest. A random forest allows us to determine the most important predictors across the explanatory variables by generating many decision trees and then ranking the variables by importance.
+Before getting in depth about Random Forest, one of the most common issue with Decision Tree model is overfitting. Overfitting is a statistical modeling error that contains more parameters than can be justified by the data. In other words, the essence of overfitting is to have extracted some of the residual variation (i.e. the noise) as if that variation represented underlying model structure. To overcome the problem of Overfitting, we use go for Random Forest. A random forest allows us to determine the most important predictors across the explanatory variables by generating many decision trees and then ranking the variables by importance.
 
 We are going to use the randomforest package to perform our modeling. We are going to do the modeling on the base data set and  see whether DRG is one of the important variable in the bagging process. In other words, we are using Random Forest to find what are the importance variables for effective prediction. We are running our model with 100 trees. Summary of the model can be seen below. 
 
@@ -600,7 +601,7 @@ print(model.rf)
 ```
 
 From the summary we can see that the Classification is the type of forest and Number of trees used in the model in 50 as defined. The no of variables tried at the split is 8. Below we could see the split as part of tree visualization. 
-Random forests technique involves sampling of the input data with replacement (bootstrap sampling). In this sampling, about one thrird of the data is not used for training and can be used to testing.These are called the out of bag samples. Next aspect in the summary output is Confustion Matrix. From the MisClassification error percentage we can see that the model incorrectly predicts no readmit 40% of time and incorrectly predicts yes readmit 43% of time. With the overall accuracy of the model at `r mean(pred.rf==randtestData$readmitted)`.
+Random forests technique involves sampling of the input data with replacement (bootstrap sampling). In this sampling, about one third of the data is not used for training and can be used to testing.These are called the out of bag samples. Next aspect in the summary output is Confusion Matrix. From the MisClassification error percentage, we can see that the model incorrectly predicts no readmit 40% of time and incorrectly predicts yes readmit 43% of time. With the overall accuracy of the model at `r mean(pred.rf==randtestData$readmitted)`.
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
 # Explanation of Plots
@@ -628,7 +629,7 @@ varImpPlot(model.rf,scale=TRUE,n.var=12)
 
 `r varImpPlot(model.rf,scale=TRUE,n.var=12)`
 
-From the decision tree and the Importance variable plot we can see that DRG Classifier is on the top 6 variables which determines out model predicition. In the Mean Decrease Gini index DRG Classifier is at the top 10 values. This clearly shows DRG is a very important factor in the hospital readmission. Though other paratemers like Discharge, Diagnosis codes plays a more important role, DRG cannot be discounted.
+From the decision tree and the Importance variable plot we can see that DRG Classifier is on the top 6 variables which determines out model predicition. In the Mean Decrease Gini index DRG Classifier is at the top 10 values. This clearly shows DRG is a very important factor in the hospital readmission. Though other parameters like Discharge, Diagnosis codes plays a more important role, DRG cannot be discounted.
 
 ####Neural Network:
 
@@ -652,14 +653,14 @@ npred = mean(pred_nn==nntestData$readmitted)
 npred
 
 ```
-In our analysis we are going to check the accuracy of our prediction and variables which are important for our prediction. Below we the accuracy of our model is `r mean(pred_nn==nntestData$readmitted) `. 
+In our analysis, we are going to check the accuracy of our prediction and variables which are important for our prediction. Below we the accuracy of our model is `r mean(pred_nn==nntestData$readmitted) `. 
 
 Below we the neural network plot with 3 hidden layer.
 `r plotnet(model_nn)`
 
 
 
-Also the plot for variable importance based on weights. From the plots we can see that DRG Classification which lies in the top 6 on positive side of the spectrum, does have an impact on the model prediction, not as the Medication, Age, Diagnosis has more of positive impact on the prediction of model.
+Also, the plot for variable importance based on weights. From the plots, we can see that DRG Classification which lies in the top 6 on positive side of the spectrum, does have an impact on the model prediction, not as the Medication, Age, Diagnosis has more of positive impact on the prediction of model.
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
 plotnet(model_nn)# 
 ```
@@ -669,9 +670,19 @@ olden(model_nn)
 
 ```
 
+#####Neural Network using SMOTE
+
+The neural network varies form statistical approach. It is more sensitive and prone to overfitting and ignoring the minority classes especially for binary classification model. Since the network is learning the result, the data should be balanced to produce an accurate representation of the model based on proportional input. The readmission binary categorical classification variable of the model is imbalanced. The number of positive readmitted patients is much larger than those whom did not readmitted. The ratio of positive reemission is over 10 times the size of the not readmitted which indicates that more than 90% of the classification variable are of the same class. The ANN sequential model with sigmoid will produce an overfitting result with high accuracy of 91 % and very low precision and recall. In addition, the model will not exhibit any learning process. The lost and accuracy will remain constant throughout the learning process. To overcome the problem a different approach where conducted. The class-weigh and SMOTE methods where selected to predict the readmission classifications. The weight method treat every instance of minority class as multiple instance of majority class based on the ratio between the two classes. It means the loss function will assign a higher value to these minority instances using the ratio between majority and minority classes. Thus, the loss becomes a weighted average, where the weight of each sample is specified by its corresponding class. The model exhibits moderate predicted accuracy value of 82%. The precision of the model is 91% and the recall is 88%.
+
+
+The Sampling method utilizes the SMOTE algorithm which an oversampling method based on synthetic minority oversampling technique uses k-nearest neighbors to create synthetic examples of the minority class. It injects the SMOTE method at each iteration. The advantage of this approach is that while standard boosting gives equal weights to misclassified data, SMOTE gives more examples of the minority class at each boosting step. The model produces and highly correlated result with 92 % accuracy. This result is confirmed by the high precision of 87% and 99% of recall.
+
+The link can be found at below location : https://github.com/dilipganesan/DATA698/blob/master/Neural%20netwok/NeuralNetwork.pdf
+
 
 ####XGBoost:
-XG Boost Algorithm: XGBoost is a library designed and optimized for boosting trees algorithms. Gradient boosting trees model is originally proposed by Friedman et al. The underlying algorithm of XGBoost is similar to the classic gbm algorithm. By employing multi-threads and imposing regularization, XGBoost is able to use more computational power and get more accurate prediction. 
+
+XG Boost Algorithm: XGBoost is a library designed and optimized for boosting trees algorithms. Gradient boosting trees model is originally proposed by Friedman et al. The underlying algorithm of XGBoost is similar to the classic gbm algorithm. By employing multi-threads and imposing regularization, XGBoost can use more computational power and get more accurate prediction. 
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
 ############################XG Boost################
@@ -717,9 +728,9 @@ xgb.plot.importance (importance_matrix = mat[1:20])
 ```
 
 
-We used the package XGBoost to go about with the model and prediction. The first step in XGBoost model is that it accepts only numeric variables, so a part of preprocessing we converted our factors to numeric value. We use One hot encoding process to convert the categorical to numeric. Next the model has own way of accept the train and test data sets. The train and test data set needs to in Matrix format. The Dmatrix format is used to convert the train and test data set. The next step in the process is cross validation. It is used to calculate the best nround for this model. The lowest error was achieved  at 6th iteration. Which we felt it to be much lower, so we did the trained the model at 50 iterations. The CV error minimum value is 0.34 with a CV accuracy of 66%. We will have to check out test set accuracy and determine if this makes sense. The objective function binary:logistic returns output probabilities rather than labels. To convert it, we need to manually use a cutoff value. We have  used 0.5 as my cutoff value for predictions. 
+We used the package XGBoost to go about with the model and prediction. The first step in XGBoost model is that it accepts only numeric variables, so a part of preprocessing we converted our factors to numeric value. We use One hot encoding process to convert the categorical to numeric. Next the model has own way of accepting the train and test data sets. The train and test data set needs to in Matrix format. The Dmatrix format is used to convert the train and test data set. The next step in the process is cross validation. It is used to calculate the best nround for this model. The lowest error was achieved  at 6th iteration. Which we felt it to be much lower, so we did the trained the model at 50 iterations. The CV error minimum value is 0.34 with a CV accuracy of 66%. We will have to check out test set accuracy and determine if this makes sense. The objective function binary:logistic returns output probabilities rather than labels. To convert it, we need to manually use a cutoff value. We have  used 0.5 as my cutoff value for predictions. 
 
-Accuracy of XGBoost Model is `r xgCM$overall[['Accuracy']]` and the Variable Importance Plot is visualized. From the plot it is clear that the DRG classifier is at the top 6 important variable in our prediction model. So we can conclude that the DRG plays a significant role in the prediction of hospital readmission.
+Accuracy of XGBoost Model is `r xgCM$overall[['Accuracy']]` and the Variable Importance Plot is visualized. From the plot, it is clear that the DRG classifier is at the top 6 important variables in our prediction model. So, we can conclude that the DRG plays a significant role in the prediction of hospital readmission.
 
 
 ### Conclusion and Next Steps:
@@ -728,8 +739,8 @@ Accuracy of XGBoost Model is `r xgCM$overall[['Accuracy']]` and the Variable Imp
 
 ```{r echo=FALSE, warning=FALSE, error=FALSE, cache=FALSE, results='hide', message=FALSE}
 
-FinalAccuarcyDH = data.frame(Model = c('Binary Log DRG','Binary Log No-DRG', 'Binary Log Trans Var','Decision Tree','Random Forest','Neural Network','XG Boost'),
-                             Accuracy = c(pred1$overall[['Accuracy']]*100,pred2$overall[['Accuracy']]*100,pred3$overall[['Accuracy']]*100,preddrg$overall[['Accuracy']]*100,rpred*100,npred*100,xgCM$overall[['Accuracy']]*100))
+FinalAccuarcyDH = data.frame(Model = c('Binary Log DRG','Binary Log No-DRG', 'Binary Log Trans Var','Decision Tree','Random Forest','Neural Network','Neural Network using SMOTE','XG Boost'),
+                             Accuracy = c(pred1$overall[['Accuracy']]*100,pred2$overall[['Accuracy']]*100,pred3$overall[['Accuracy']]*100,preddrg$overall[['Accuracy']]*100,rpred*100,npred*100,'92.69975463',xgCM$overall[['Accuracy']]*100))
 
 
 
@@ -737,8 +748,47 @@ FinalAccuarcyDH = data.frame(Model = c('Binary Log DRG','Binary Log No-DRG', 'Bi
 
 `r FinalAccuarcyDH %>% kable() %>% kable_styling()`
 
+We started this thesis with following problem statement in mind. 
 
+1.	Is DRG (Diagnosis Related Group) as parameter a positive predictor for hospital readmission in diabetes mellitus patients? 
 
+2.  What are the strongest predictors that lead to hospital readmission in diabetes mellitus patients?
+
+To achieve the end goal, we started with the following steps. First we started with gathering of data, our dataset did not contain DRG variable which is crucial for our analysis. So, in data gathering phase we did automated scripting
+to fetch the DRG from the website Find A Code. For fetching the DRG we used variable in clinical dataset like diagnosis codes, patient age and sex. Once we extracted the DRG for each encounter data, we cross mapped them to DRG Classification code, since having 500 separate DRG will not add much value in prediction. 
+
+Once the consolidate dataset was prepared with 56 variables including DRG and DRG Final Paid Amount, we followed with investigating the variables and dataset. We removed variables which had more than 50% NAs data, we removed medication variables which had class imbalance, we also looked the dataset from clinical perspective and removed variables and data which does not make clinical significance. The total variables narrowed down for our modeling came down to 30. From plotting of frequency, we discovered some variables have skewness and the strategy was to perform log transformation to correct the skewness. We also did a correlation analysis to make sure we do not run into the problem of multicollinearity. 
+
+Next preparation of training and test dataset, since our dataset had class bias on the target(readmitted) variable, we extracted 1s and 0s data for training dataset  in right proportion. Once the training and test data were prepared, the next step was to perform predictive modelling. We started with Binary Logistic regression for our dataset. Our strategy for Logistic regression is to run the model with base variables and data and see how the model behaves, followed by running the model without DRG and other variables which does not add much significance to see whether the accuracy of the model goes up or down and finally to run the model with log transformed variables which had skewness. The accuracy, AUC and other parameters of three models are listed above.From the above analysis we see not much difference in accuracy of all the three models. Even though model with significant variables has a better accuracy, the difference is not that significant to conclude the model is the best. From this we can say that the DRG is a neutral variable in terms of accuracy of binary logistic model. Next, we did comparison of accuracy using Decision Tree, Random Forest, Neural Network and XGBoost. From the accuracy chart, we see Neural Network has better accuracy followed by Decision Tree. The Bagging/Boosting algorithms of Random Forest and XGBoost did not resulted in greater accuracy to much of our disappointment. We see more scope for improvement in these two models.
+
+In probing the next question of strongest predictor variables, we see the following variables has impact on the model. Some of the variables are Number of Lab procedures (If the number of procedures are more, then it means that patient could be suffering from more complications), Discharge Disposition (Patients with Discharge disposition of "Left Against Medical Advise" has higher chance of getting readmitted ), Number of Medications, time in hospital et.al. The one parameter which stood out was DRGClassification. In both the Random Forest and XGBoost variable importance plot it stood out one among top 6, playing a very significant predictor. This we consider as a big success to our thesis because all the researches done so far never considered DRG to be a variable in their dataset. Having discovered the variable is of top significance in predicting the readmission of Diabetes patient warrants us to probe DRG much deeper in future analysis. From this we can conclude that DRG acts as an important parameter in hospital readmission of patients.
+
+As for next step, we wanted to see a pattern in how the hospitals are using DRG and the amounts they get reimbursed for these DRGs. Future research needs to be done to see a pattern in the DRG billing. Apriori algorithms of sort can be used for frequent item set mining and association rule learning over transactional clinical datasets. Also, to improve the accuracy of Random Forest and XGBoost, we would like to change the clinical dataset by including some parameter which has better scope in increasing accuracy. 
+
+####References
+
+1.	https://bmcendocrdisord.biomedcentral.com/articles/10.1186/s12902-016-0084-z
+2.	https://www.sciencedirect.com/science/article/pii/S1532046415000969#t0005
+3.	https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3552066/
+4.	https://www.sciencedirect.com/science/article/pii/S1877050918317873
+5.	https://www.researchgate.net/publication/315640596_Predicting_Diabetic_Readmission_Rates_Moving_Beyond_HbA1c
+6.	https://www.hindawi.com/journals/bmri/2014/781670/
+7.	https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1350282/?page=3
+8.	https://clindiabetesendo.biomedcentral.com/articles/10.1186/s40842-016-0040-x
+9.	https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4439931/
+10.	https://www.mdmag.com/medical-news/patients-with-diabetes-often-readmitted-for-hypo-and-hyperglycemia
+11.	https://link.springer.com/article/10.1007/s11892-018-0989-1
+12.	https://www.healthleadersmedia.com/clinical-care/diabetes-complications-increase-readmission-risk
+
+####Appendix
+
+The final code deliverable is available in the following location:
+
+https://github.com/dilipganesan/DATA698/tree/master/Final
+
+The entire code base is available in the following location:
+
+https://github.com/dilipganesan/DATA698
 
 
 
