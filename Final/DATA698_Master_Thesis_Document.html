@@ -231,25 +231,25 @@ $(document).ready(function () {
 <p>The diabetes dataset we have used consists of 10,000 records and 56 features. Below given is the detailed description of some of the important features in the dataset.</p>
 <ol style="list-style-type: decimal">
 <li><p>Encounter ID: Continuous running number. Provides a unique identifier for each claim record. No NAs</p></li>
-<li><p>Race: Categorical values. Values: African-American, Asian, Caucasian, Hispanic, Other. NAs 2.21%</p></li>
+<li><p>Race: Categorical values. Values: African-American, Asian, Caucasian, Hispanic, Other. Very less rows has no data.</p></li>
 <li><p>Gender: Categorical values. Values: Male, Female, Unknown. No NAs</p></li>
 <li><p>Age: Categorical values. Values: Instead of giving unique age ranges because of PHI violation we have age ranges. [0-10), [10-20), [20-30), [30-40), [40-50), [50-60), [60-70), [70-80), [80-90), [90-100). No NAs</p></li>
-<li><p>Weight: Numerical values. Values: Weight of a patient. NAs 95.92%. We need to see whether we are going to use in our Model.</p></li>
-<li><p>Admission type ID: Categorical values. Values: Elective, Emergency, Newborn, Not Available, Not Mapped, Urgent. NAs 7.21%</p></li>
-<li><p>Discharge disposition ID: Categorical values. Values: 22 levels - Admitted as an inpatient to this hospital, Not Mapped et.al . NAs 4.69%</p></li>
-<li><p>Admission source ID: Categorical values. Values: 11 levels - Clinic Referral Court/Law, Enforcement, Emergency Room, HMO Referral, Not Available Transfer from another health care facility. NAs 9.36%</p></li>
+<li><p>Weight: Numerical values. Values: Weight of a patient. Almost 90% are NAs. Though as part of Literature review Weight is an important factor, the non availablity of data we are going to not use in our Model</p></li>
+<li><p>Admission type ID: Categorical values. Values: Elective, Emergency, Newborn, Not Available, Not Mapped, Urgent. NAs 7%</p></li>
+<li><p>Discharge disposition ID: Categorical values. Values: 22 levels - Admitted as an inpatient to this hospital, Not Mapped et.al . NAs 4%</p></li>
+<li><p>Admission source ID: Categorical values. Values: 11 levels - Clinic Referral Court/Law, Enforcement, Emergency Room, HMO Referral, Not Available Transfer from another health care facility. NAs 9%</p></li>
 <li><p>Time in hospital: Numerical values. Values: Days spent in the hospital by the patient. NAs 0%</p></li>
-<li><p>Payer code: Categorical values. Values: BC CH CM CP DM HM MC MD OG OT PO SI SP UN WC. NAs 53.41%. Almost 50% missing.</p></li>
-<li><p>Medical specialty: Categorical values. Values: 52 Levels - Anesthesiology-PediatricCardiology Cardiology-Pediatric Emergency/Trauma … Urology. NAs 41%</p></li>
+<li><p>Payer code: Categorical values. These does not have much impact on our model from clinical prespective and also almost 50% missing.</p></li>
+<li><p>Medical specialty: Categorical values. These does not have much impact on our model from clinical prespective and also almost 40% missing.</p></li>
 <li><p>Number lab procedures: Numerical values. Values: Number of lab procedures done. No NA</p></li>
 <li><p>Number procedures: Numerical values. Values: Number of procedures done. No NA</p></li>
 <li><p>Number medications: Numerical values. Values: Number of medications prescribed. No NA</p></li>
 <li><p>Number outpatient: Numerical values. Values: Number of outpatient visits by the patient. No NA</p></li>
 <li><p>Number emergency: Numerical values. Values: Number of emergency visits by the patient. No NA</p></li>
 <li><p>Number inpatient: Numerical values. Values: Number of inpatient visits by the patient. No NA</p></li>
-<li><p>Diagnoses 1: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 457 Levels: 11 110 112 141 150 151 153 154 155 156 157 158 160 161 162 164 171 174 180 182 183 184 185 187 188 … V71. NAs 0.02%</p></li>
-<li><p>Diagnoses 2: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 429 Levels: 11 110 112 131 135 136 138 150 151 153 154 155 156 157 162 171 173 174 185 188 189 193 196 197 198 … V85. NAs 0.59%</p></li>
-<li><p>Diagnoses 3: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 460 Levels: 110 112 117 135 138 150 151 153 154 155 162 170 172 174 179 185 188 189 196 197 198 199 200 201 202 … V85. NAs 2.08%</p></li>
+<li><p>Diagnoses 1: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 457 Levels. NAs 0.02%</p></li>
+<li><p>Diagnoses 2: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 429 Levels. NAs 0.59%</p></li>
+<li><p>Diagnoses 3: Categorical values. Values: Different types of diagnoses referred from the ICD-9 codes 460 Levels. NAs 2.08%</p></li>
 <li><p>Number diagnoses: Numerical values. Values: Number of diagnoses done by the patient. No NAs</p></li>
 <li><p>Max glu serum: Categorical values. Indicates the range of the result or if the test was not taken. Values: &gt;200, &gt;300, Norm and None if not measured. No NAs</p></li>
 <li><p>A1Cresult: Categorical values. Indicates the range of the result or if the test was not taken. Values: &gt;7 (if result was greater than 7%), &gt;8 (if result was greater than 8%), None (if test not taken), and Norm (if result is normal). No NAs</p></li>
