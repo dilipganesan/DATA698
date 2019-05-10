@@ -144,7 +144,7 @@ Results of all models were then compared to see which of these models could bett
 
 ###Data Exploration:
 
-The diabetes dataset we have used consists of 10,000 records and 56 features. Below given is the detailed description of some of the important features in the dataset.
+The diabetes dataset we have used consists of 100,000 records and 56 features. Below given is the detailed description of some of the important features in the dataset.
 
 1. Encounter ID: Continuous running number. Provides a unique identifier for each claim record. No NAs
 
@@ -226,7 +226,7 @@ newdataset = dataset %>%
 
 ```
 
-The data set contains total of 54 variables. We investigated each variable did data transformation and picked the variables which are best suited for our modeling. We will look at the variables which were dropped, why we dropped them and variables which went through transformation.
+The data set contains total of 56 variables. We investigated each variable did data transformation and picked the variables which are best suited for our modeling. We will look at the variables which were dropped, why we dropped them and variables which went through transformation.
 
 The following variables were dropped. Encounter ID, Patient_Nbr. The two variables were dropped because they are running numbers and does not add any value to our model. As a next step, we looked for variables with missing rows. There were few variables which were almost 90% empty. So, we decided to drop those variables. These variables are Weight, Payer Code and Specialty.  
 
@@ -790,6 +790,8 @@ https://github.com/dilipganesan/DATA698/tree/master/Final
 The entire code base is available in the following location:
 
 https://github.com/dilipganesan/DATA698
+
+Youtube Link : https://youtu.be/gaKZxE_nRGw
 
 
 

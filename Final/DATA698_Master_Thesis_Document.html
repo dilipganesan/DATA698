@@ -228,7 +228,7 @@ $(document).ready(function () {
 </div>
 <div id="data-exploration-1" class="section level3">
 <h3>Data Exploration:</h3>
-<p>The diabetes dataset we have used consists of 10,000 records and 56 features. Below given is the detailed description of some of the important features in the dataset.</p>
+<p>The diabetes dataset we have used consists of 100,000 records and 56 features. Below given is the detailed description of some of the important features in the dataset.</p>
 <ol style="list-style-type: decimal">
 <li><p>Encounter ID: Continuous running number. Provides a unique identifier for each claim record. No NAs</p></li>
 <li><p>Race: Categorical values. Values: African-American, Asian, Caucasian, Hispanic, Other. Very less rows has no data.</p></li>
@@ -264,7 +264,7 @@ $(document).ready(function () {
 </div>
 <div id="data-preparation-1" class="section level3">
 <h3>Data Preparation:</h3>
-<p>The data set contains total of 54 variables. We investigated each variable did data transformation and picked the variables which are best suited for our modeling. We will look at the variables which were dropped, why we dropped them and variables which went through transformation.</p>
+<p>The data set contains total of 56 variables. We investigated each variable did data transformation and picked the variables which are best suited for our modeling. We will look at the variables which were dropped, why we dropped them and variables which went through transformation.</p>
 <p>The following variables were dropped. Encounter ID, Patient_Nbr. The two variables were dropped because they are running numbers and does not add any value to our model. As a next step, we looked for variables with missing rows. There were few variables which were almost 90% empty. So, we decided to drop those variables. These variables are Weight, Payer Code and Specialty.</p>
 <p>Next, we inspected variable Gender There were three factors with respect to gender, when looked at the data only 3 rows have factor level apart from Male and Female. We dropped those 3 rows, it will not affect our model dropping those 3 rows. Other variable with patient population which is important is Race. We collapsed race in to following categories (1- Other, 2 - African American, 3 - Asian, 4- Caucasian, 5 - Hispanic). The other variable Age which was in a set of ranges of values, instead of age range we took average of age range and used the average to replace the age range.</p>
 <p>From data perspective, we looked at unique Discharge values in data set. There were four data values which were related to Death of patient in the hospital. Since a person dying in hospital has no chance of getting re admitted, we dropped those rows. On analysis of medications, we figured Examide and Citoglipton was not administered to the entire patient population. So, it is of no use to add these two in our analysis and it was decided to drop.</p>
@@ -1410,6 +1410,7 @@ XG Boost
 <p><a href="https://github.com/dilipganesan/DATA698/tree/master/Final" class="uri">https://github.com/dilipganesan/DATA698/tree/master/Final</a></p>
 <p>The entire code base is available in the following location:</p>
 <p><a href="https://github.com/dilipganesan/DATA698" class="uri">https://github.com/dilipganesan/DATA698</a></p>
+<p>Youtube Link : <a href="https://youtu.be/gaKZxE_nRGw" class="uri">https://youtu.be/gaKZxE_nRGw</a></p>
 </div>
 </div>
 </div>
